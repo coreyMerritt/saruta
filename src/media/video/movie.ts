@@ -55,13 +55,13 @@ export class Movie extends Video {
         var newBasePath = `${Configs.coreDirectories.productionVideos}/${this.getTableName()}`
         var currentFileExtension = path.extname(this.filePath)
         var title = this.prepStringForFileName(this.title)
-        return `${newBasePath}/(${this.releaseYear})-${title}${currentFileExtension}`
+        return `${newBasePath}/${this.releaseYear}-${title}${currentFileExtension}`
     }
 
     getRejectFilePath(): string {
         var newBasePath = `${Configs.coreDirectories.rejectionVideos}/${this.getTableName()}`
         var currentFileExtension = path.extname(this.filePath)
         var title = this.prepStringForFileName(this.title)
-        return `${newBasePath}/(${this.releaseYear})-${title}${currentFileExtension}`
+        return `${newBasePath}/${this.releaseYear}-${title}${currentFileExtension}`
     }
 }
