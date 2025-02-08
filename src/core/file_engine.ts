@@ -93,12 +93,18 @@ export class FileEngine {
                 try {
                     fs.mkdirSync(path.dirname(newFilePath), { recursive: true })
                     fs.accessSync(media.filePath)
-                    fs.renameSync(media.filePath, newFilePath)
+                    try {
+                        fs.renameSync(media.filePath, newFilePath)
+                    } catch {
+                        SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
+                        fs.copyFileSync(media.filePath, newFilePath)
+                        fs.unlinkSync(media.filePath)
+                    }
                     media.filePath = newFilePath
                     await FileEngine.cleanStagingDirectory()
                     count++
                 } catch (error) {
-                    throw new Error(`Something went wrong while trying to move staging file to ${landing}: ${media.filePath}.`, { cause: error })
+                    throw new Error(`Something went wrong while trying to move staging file to ${landing}: ${media.filePath}`, { cause: error })
                 }
             }
         }

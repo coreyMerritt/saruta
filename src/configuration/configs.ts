@@ -54,6 +54,7 @@ interface ActiveVideoTypeDirectories {
 export class Configs {
 
     public static rootDirectory: RootDirectories
+    public static sarutaFilesDirectory: RootDirectories
     public static databaseNames: ActiveDatabaseNames
     public static databaseInfo: DatabaseInfo
     public static backupDirectories: ActiveBackupDirectories
@@ -65,6 +66,7 @@ export class Configs {
     public static set(test?: boolean) {
         if (test) {
             this.rootDirectory = RootDirectories.Test
+
             this.databaseNames = {
                 staging: DatabaseNames.TestStaging,
                 production: DatabaseNames.TestProduction,
@@ -78,6 +80,8 @@ export class Configs {
                 rejection: DatabaseNames.Rejection
             }
         }
+
+        this.sarutaFilesDirectory = RootDirectories.Saruta_Files
         
         this.setDatabaseInfo()
         this.setBackupDirectories()
@@ -101,17 +105,17 @@ export class Configs {
     
     private static setBackupDirectories(): void {
         this.backupDirectories = {
-            in: `${this.rootDirectory}/${BackupDirectories.In}`,
-            out: `${this.rootDirectory}/${BackupDirectories.Out}`
+            in: `${this.sarutaFilesDirectory}/${BackupDirectories.In}`,
+            out: `${this.sarutaFilesDirectory}/${BackupDirectories.Out}`
         }
     }
 
     private static setCoreDirectories(): void {
         this.coreDirectories = {
-            logs: `${this.rootDirectory}/${CoreDirectories.Logs}`,
-            stagingVideos: `${this.rootDirectory}/${CoreDirectories.StagingVideos}`,
+            logs: `${this.sarutaFilesDirectory}/${CoreDirectories.Logs}`,
+            stagingVideos: `${this.sarutaFilesDirectory}/${CoreDirectories.StagingVideos}`,
             productionVideos: `${this.rootDirectory}/${CoreDirectories.ProductionVideos}`,
-            rejectionVideos: `${this.rootDirectory}/${CoreDirectories.RejectionVideos}`
+            rejectionVideos: `${this.sarutaFilesDirectory}/${CoreDirectories.RejectionVideos}`
         }
     }
 
