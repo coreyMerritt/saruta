@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import { Paths } from './configuration.js'
-import { LikiTime } from '../../src/core/liki_time.js'
+import { SarutaTime } from '../../src/core/saruta_time.js'
 
 
 export class FileEngine {
@@ -94,7 +94,7 @@ export class FileEngine {
             const originalFileContent = this.readFileAsString(originalPath)
             const newFileDirectory = path.dirname(backupPath)
             const newFileName = path.basename(backupPath)
-            const newFilePath = `${newFileDirectory}/${LikiTime.getCurrentDateTime(true)}---${newFileName}`
+            const newFilePath = `${newFileDirectory}/${SarutaTime.getCurrentDateTime(true)}---${newFileName}`
             fsSync.writeFileSync(newFilePath, originalFileContent)
         } catch (error) {
             throw new Error(`Failed to back up file: ${originalPath} to ${backupPath}`, { cause: error })

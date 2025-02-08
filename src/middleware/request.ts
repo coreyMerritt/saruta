@@ -1,5 +1,5 @@
-import { LikiLogger } from "../core/liki_logger.js"
-import { LikiTime } from "../core/liki_time.js"
+import { SarutaLogger } from "../core/saruta_logger.js"
+import { SarutaTime } from "../core/saruta_time.js"
 import { LogFiles } from '../configuration/directories/index.js'
 import fs from 'fs/promises'
 import chalk from 'chalk'
@@ -12,11 +12,11 @@ export class RequestMiddleware {
 
     public static async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
         process.stdout.write(`\n`)
-        LikiLogger.logTimestamp()
+        SarutaLogger.logTimestamp()
         process.stdout.write(blue(`Request Recieved\n\n`))
 
         fs.appendFile(`${Configs.logPaths.incomingRequest}`, 
-            `[${LikiTime.getCurrentDateTime()}]\n` +
+            `[${SarutaTime.getCurrentDateTime()}]\n` +
             `\tURL: ${req.url}\n` +
             `\tMethod: ${req.method}\n` +
             `\tIP: ${req.socket.remoteAddress}\n` +

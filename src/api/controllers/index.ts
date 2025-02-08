@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { VideoFactory, VideoTypes } from '../../media/video/index.js'
-import { AI, Database, FileEngine, LikiLogger, Validators } from '../../core/index.js'
+import { AI, Database, FileEngine, SarutaLogger, Validators } from '../../core/index.js'
 import { Media } from '../../media/media.js'
 import { Configs } from '../../configuration/configs.js'
 
@@ -54,7 +54,7 @@ export class IndexController {
         const nullMiscVideo = VideoFactory.createNullFromVideoType(VideoTypes.Misc)
         count += await this.indexOneStagingDirectory(nullMiscVideo)
         
-        LikiLogger.success(`${count} staging file${count === 1 ? '' : 's'} indexed in total.`)
+        SarutaLogger.success(`${count} staging file${count === 1 ? '' : 's'} indexed in total.`)
         return count
     }
 
@@ -76,7 +76,7 @@ export class IndexController {
             throw new Error(`Unable to index staging directory: ${nullMedia.getStagingDirectory()}`, { cause: error })
         }
 
-        LikiLogger.success(`${count} staging file${count === 1 ? '' : 's'} indexed inside: ${nullMedia.getStagingDirectory()}`)
+        SarutaLogger.success(`${count} staging file${count === 1 ? '' : 's'} indexed inside: ${nullMedia.getStagingDirectory()}`)
         return count
     }
 }

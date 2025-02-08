@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { Media, MediaTypes } from '../../media/media'
 import { DatabaseNames, DatabaseTableNames } from '../../configuration/db'
-import { Database, FileEngine, LikiLogger, Validators } from '../../core'
+import { Database, FileEngine, SarutaLogger, Validators } from '../../core'
 import { Video, VideoFactory, VideoTypes } from '../../media/video'
 import { Configs } from '../../configuration/configs'
 
@@ -59,7 +59,7 @@ export class LintController {
 
     private static async removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName: DatabaseNames, tableName?: DatabaseTableNames): Promise<void> {
         if (!tableName) {
-            LikiLogger.info(`Removing invalid entries from: ${databaseName}`)
+            SarutaLogger.info(`Removing invalid entries from: ${databaseName}`)
         }
 
         try {
@@ -83,7 +83,7 @@ export class LintController {
                 }
             }
 
-            LikiLogger.success(`Successfully linted database: ${databaseName}`)
+            SarutaLogger.success(`Successfully linted database: ${databaseName}`)
 
         } catch (error) {
             throw new Error(`Unable to lint database: ${databaseName}`, { cause: error })

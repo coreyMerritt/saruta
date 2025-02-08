@@ -1,6 +1,6 @@
 export enum CoreDirectories {
-    Logs = `liki/logs`,
-    StagingVideos = `liki/staging/media/videos`,
+    Logs = `saruta/logs`,
+    StagingVideos = `saruta/staging/media/videos`,
     ProductionVideos = `media/videos`,
-    RejectionVideos = `liki/rejection/media/videos`
+    RejectionVideos = `saruta/rejection/media/videos`
 }

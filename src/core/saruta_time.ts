@@ -1,4 +1,4 @@
-export class LikiTime {
+export class SarutaTime {
 
     public static getCurrentDateTime(fileFormat?: boolean): string {
         const now = new Date()

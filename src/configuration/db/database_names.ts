@@ -1,8 +1,8 @@
 export enum DatabaseNames {
-    Staging = 'liki_staging',
-    Production = 'liki_production',
-    Rejection = 'liki_rejection',
-    TestStaging = 'liki_test_staging',
-    TestProduction = 'liki_test_production',
-    TestRejection = 'liki_test_rejection'
+    Staging = 'saruta_staging',
+    Production = 'saruta_production',
+    Rejection = 'saruta_rejection',
+    TestStaging = 'saruta_test_staging',
+    TestProduction = 'saruta_test_production',
+    TestRejection = 'saruta_test_rejection'
 }

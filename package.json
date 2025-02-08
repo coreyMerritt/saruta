@@ -1,10 +1,10 @@
 {
-  "name": "liki",
+  "name": "saruta",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "liki": "tsc -p tsconfig.json && node ./dist/src/startup/start.js",
+    "saruta": "tsc -p tsconfig.json && node ./dist/src/startup/start.js",
     "client": "tsc -p tsconfig.test_client.json && node ./dist/tools/test_client/start.js"
   },
   "keywords": [],
@@ -34,7 +34,7 @@
     "express": "^4.21.0",
     "express-async-handler": "^1.2.0",
     "fluent-ffmpeg": "^2.1.3",
-    "liki": "file:",
+    "saruta": "file:",
     "madge": "^8.0.0",
     "mysql2": "^3.11.3",
     "mysqldump": "^3.2.0",

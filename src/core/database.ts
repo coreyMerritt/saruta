@@ -1,5 +1,5 @@
-import { LikiLogger } from './liki_logger.js'
-import { LikiTime } from './liki_time.js'
+import { SarutaLogger } from './saruta_logger.js'
+import { SarutaTime } from './saruta_time.js'
 import { DatabaseNames, DatabaseTableNames } from '../configuration/db/index.js'
 import { Sequelize, QueryTypes } from 'sequelize'
 import { promisify } from 'util'
@@ -34,8 +34,8 @@ export class Database {
     public static async backup(databaseName: DatabaseNames): Promise<void> {
         const execAsync = promisify(exec)
         try {
-            await execAsync(`mysqldump -u ${Configs.databaseInfo.username} -p${Configs.databaseInfo.password} ${databaseName} > "${Configs.backupDirectories.out}/${databaseName}___${LikiTime.getCurrentDateTime(true)}".sql`)
-            LikiLogger.success(`Backed up database: ${databaseName}.`)
+            await execAsync(`mysqldump -u ${Configs.databaseInfo.username} -p${Configs.databaseInfo.password} ${databaseName} > "${Configs.backupDirectories.out}/${databaseName}___${SarutaTime.getCurrentDateTime(true)}".sql`)
+            SarutaLogger.success(`Backed up database: ${databaseName}.`)
         } catch (error) {
             throw new Error(`Failed to back up database: ${databaseName}`, { cause: error })
         }
@@ -184,13 +184,13 @@ export class Database {
         try {
             for (const [, filePath] of filePaths.entries()) {
                 if (await Database.filePathInDatabase(databaseName, filePath)) {
-                    LikiLogger.data(`Tossing already indexed file`, filePath)
+                    SarutaLogger.data(`Tossing already indexed file`, filePath)
                     filePathsToToss.push(filePath)
                 }
             }
             filePaths = filePaths.filter(filePath => !filePathsToToss.includes(filePath))
             if (filePathsToToss.length > 0) {
-                LikiLogger.important(`${filePathsToToss.length} staging files were tossed due to already being indexed.`)
+                SarutaLogger.important(`${filePathsToToss.length} staging files were tossed due to already being indexed.`)
             }
             return filePaths
         } catch (error) {
@@ -303,7 +303,7 @@ export class Database {
                     }
                 }
             }
-            LikiLogger.success(`${count} production index${count > 1 ? 'es' : ''} created and ${count} staging index${count > 1 ? 'es' : ''} removed.`)
+            SarutaLogger.success(`${count} production index${count > 1 ? 'es' : ''} created and ${count} staging index${count > 1 ? 'es' : ''} removed.`)
 
         } catch (error) {
             throw new Error(`Error while moving staging database entry into production database. State unclear.`, { cause: error })

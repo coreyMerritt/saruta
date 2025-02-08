@@ -1,4 +1,4 @@
-import { LikiLogger } from '../core/index.js'
+import { SarutaLogger } from '../core/index.js'
 import { Media } from '../media/media.js'
 import path from 'path'
 import fs from 'fs'
@@ -64,7 +64,7 @@ export class FileEngine {
                     const isProperFileExtension = extensionsToMatch.some(extensionToMatch => extensionToMatch === fileExtension);
                     if (isProperFileExtension) {
                         filesMatchingExtension.push(fullPath)
-                        LikiLogger.data(`Added file to be indexed`, fullPath)
+                        SarutaLogger.data(`Added file to be indexed`, fullPath)
                     }
                 }
             }
@@ -76,7 +76,7 @@ export class FileEngine {
     }
 
     private static async moveStagingFilesToPath(validationResponse: ValidationResponse, landing: LandingPoints): Promise<void> {
-        LikiLogger.info(`Attempting to move files from staging to ${landing}...`)
+        SarutaLogger.info(`Attempting to move files from staging to ${landing}...`)
 
         var count = 0
         for (const [, tableName] of Object.keys(validationResponse.tables).entries()) {
@@ -103,7 +103,7 @@ export class FileEngine {
             }
         }
 
-        LikiLogger.success(`${count} staging file${count > 1 ? 's' : ''} moved to production.`)
+        SarutaLogger.success(`${count} staging file${count > 1 ? 's' : ''} moved to production.`)
     }
 
     private static async cleanStagingDirectory(): Promise<void> {

@@ -1,4 +1,4 @@
-import { Database, LikiLogger } from '../core/index.js'
+import { Database, SarutaLogger } from '../core/index.js'
 import cron from 'node-cron'
 import fs from 'fs'
 import http from 'http'
@@ -53,7 +53,7 @@ export class Start {
         const server = http.createServer(app)
 
         server.listen(Start.port, () => {
-            LikiLogger.success(`Server is running on ${Start.url}`)
+            SarutaLogger.success(`Server is running on ${Start.url}`)
         })
         app.use(express.json({ limit: '1gb' }))
 

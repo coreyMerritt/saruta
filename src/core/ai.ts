@@ -1,4 +1,4 @@
-import { LikiLogger } from './liki_logger.js'
+import { SarutaLogger } from './saruta_logger.js'
 import { Validators } from './validators.js'
 import { OpenAI } from 'openai'
 import { Prompt } from './prompt.js'
@@ -21,12 +21,12 @@ export class AI {
         for (const [i, filePath] of filePaths.entries()) {
             workingArray.push(filePath)
             if (((i+1) % 30) === 0) {
-                LikiLogger.info(`Attempting to parse files ${i-28}-${i+1} of ${filePaths.length}...`)
+                SarutaLogger.info(`Attempting to parse files ${i-28}-${i+1} of ${filePaths.length}...`)
                 const tenVideoFiles = await this.parseSomeMediaData(workingArray, prompt)
                 videoFiles = videoFiles.concat(tenVideoFiles)
                 workingArray = []
             } else if (i+1 === filePaths.length) {
-                LikiLogger.info(`Attempting to parse files ${(Math.floor(i/30)*30)+1}-${i+1} of ${filePaths.length}...`)
+                SarutaLogger.info(`Attempting to parse files ${(Math.floor(i/30)*30)+1}-${i+1} of ${filePaths.length}...`)
                 const upToNineVideoFiles = await this.parseSomeMediaData(workingArray, prompt)
                 videoFiles = videoFiles.concat(upToNineVideoFiles)
             }
