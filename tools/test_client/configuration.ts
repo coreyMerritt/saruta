@@ -1,5 +1,5 @@
 export enum Directories {
-    ClientDirectory = '/mnt/w/saruta/test-client',
+    ClientDirectory = '/mnt/z/saruta/test-client',
     ClientDirectoryBackup = `${ClientDirectory}/backup`
 }
 
