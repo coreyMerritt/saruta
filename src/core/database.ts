@@ -9,6 +9,8 @@ import { MediaFactory } from '../media/media_factory.js'
 import { Validators } from './validators.js'
 import { ValidationResponse } from './file_engine.js'
 import { Configs } from '../configuration/configs.js'
+import { VideoFactory } from '../media/video/video_factory.js'
+import { VideoTypes } from '../media/video/video.js'
 
 
 
@@ -21,9 +23,12 @@ export class Database {
 
 
   public static async initialize(): Promise<void> {
-    Database.stagingDatabase = await Database.loadDatabase(Configs.databaseNames.staging)
-    Database.productionDatabase = await Database.loadDatabase(Configs.databaseNames.production)
-    Database.rejectionDatabase = await Database.loadDatabase(Configs.databaseNames.rejection)
+    Database.stagingDatabase = Database.loadDatabase(Configs.databaseNames.staging)
+    Database.productionDatabase = Database.loadDatabase(Configs.databaseNames.production)
+    Database.rejectionDatabase = Database.loadDatabase(Configs.databaseNames.rejection)
+    Database.initAndSyncAllModels(Configs.databaseNames.staging)
+    Database.initAndSyncAllModels(Configs.databaseNames.production)
+    Database.initAndSyncAllModels(Configs.databaseNames.rejection)
   }
 
 
@@ -70,12 +75,6 @@ export class Database {
 
   public static async indexFilesIntoStagingDatabase(media: Media[]): Promise<number> {
     try {
-      const TABLE_NAME = media[0].getTableName()
-      const TABLE_EXISTS_IN_STAGING = await Database.tableExists(Configs.databaseNames.staging, TABLE_NAME)
-      if (! TABLE_EXISTS_IN_STAGING) {
-        await Database.initAndSyncModel(Configs.databaseNames.staging, media[0])
-      }
-
       if (media.length > 0) {
         for (const [, SINGLE_MEDIA] of media.entries()) {
           await Database.insertMediaIntoTable(Configs.databaseNames.staging, SINGLE_MEDIA)
@@ -283,7 +282,7 @@ export class Database {
 
 
 
-  private static async loadDatabase(databaseName: DatabaseNames): Promise<Sequelize> {
+  private static loadDatabase(databaseName: DatabaseNames): Sequelize {
     try {
       const USERNAME = Configs.databaseInfo.username
       const PASSWORD = Configs.databaseInfo.password
@@ -293,7 +292,7 @@ export class Database {
       const SEQUELIZE = new Sequelize(
         `mysql://${USERNAME}:${PASSWORD}@${HOST}:${PORT}`
       )
-      await SEQUELIZE.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\``, { logging: false })
+      SEQUELIZE.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\``, { logging: false })
       const DATABASE = new Sequelize(databaseName, Configs.databaseInfo.username, Configs.databaseInfo.password, {
         host: 'localhost',
         dialect: 'mysql',
@@ -304,6 +303,24 @@ export class Database {
     } catch (error) {
       throw new Error(`Failed to load database: ${databaseName}`, { cause: error })
     }
+  }
+
+
+
+  private static initAndSyncAllModels(databaseName: DatabaseNames): void {
+    const NULL_ANIMATION = VideoFactory.createNullFromVideoType(VideoTypes.Animation)
+    const NULL_ANIME = VideoFactory.createNullFromVideoType(VideoTypes.Anime)
+    const NULL_MISC_VIDEO = VideoFactory.createNullFromVideoType(VideoTypes.Misc)
+    const NULL_MOVIE = VideoFactory.createNullFromVideoType(VideoTypes.Movie)
+    const NULL_SHOW = VideoFactory.createNullFromVideoType(VideoTypes.Show)
+    const NULL_STANDUP = VideoFactory.createNullFromVideoType(VideoTypes.Standup)
+
+    Database.initAndSyncModel(databaseName, NULL_ANIMATION)
+    Database.initAndSyncModel(databaseName, NULL_ANIME)
+    Database.initAndSyncModel(databaseName, NULL_MISC_VIDEO)
+    Database.initAndSyncModel(databaseName, NULL_MOVIE)
+    Database.initAndSyncModel(databaseName, NULL_SHOW)
+    Database.initAndSyncModel(databaseName, NULL_STANDUP)
   }
 
 
@@ -358,12 +375,12 @@ export class Database {
 
 
 
-  private static async initAndSyncModel(databaseName: DatabaseNames, media: Media): Promise<void> {
+  private static initAndSyncModel(databaseName: DatabaseNames, media: Media): void {
     const DATABASE = Database.determineDatabase(databaseName)
     try {
       const MODEL = media.getModel()
       MODEL.init(media.getAttributes(), { sequelize: DATABASE, tableName: media.getTableName() })
-      await MODEL.sync()
+      MODEL.sync()
     } catch (error) {
       throw new Error(`Failed to init & sync model to table: ${media.getTableName()}`, { cause: error })
     }
@@ -390,41 +407,39 @@ export class Database {
   private static async moveDatabaseOneEntriesToDatabaseTwo(
     originalValidationResponse: ValidationResponse,
     validationResponseWithUpdatedFilePaths: ValidationResponse,
-    databaseOne: DatabaseNames,
-    databaseTwo: DatabaseNames
+    databaseNameOne: DatabaseNames,
+    databaseNameTwo: DatabaseNames
   ): Promise<void> {
 
     let count = 0
 
     try {
       for (const [, TABLE_NAME] of Object.keys(validationResponseWithUpdatedFilePaths.tables).entries()) {
-        console.debug(`~~~~~~~~~~~~~~~~~~~~~~${TABLE_NAME}~~~~~~~~~~~~~~~~~~~`)
         for (const [INDEX, MEDIA] of validationResponseWithUpdatedFilePaths.tables[TABLE_NAME].entries()) {
           const INITIAL_FILE_PATH = originalValidationResponse.tables[TABLE_NAME][INDEX].filePath
           if (INITIAL_FILE_PATH !== MEDIA.filePath) {
             const TRUE_MEDIA = MediaFactory.createMediaFromTableName(MEDIA, TABLE_NAME as DatabaseTableNames)
-            await Database.initAndSyncModel(databaseTwo, TRUE_MEDIA)
-            await Database.insertMediaIntoTable(databaseTwo, TRUE_MEDIA)
+            await Database.insertMediaIntoTable(databaseNameTwo, TRUE_MEDIA)
             await Database.deleteFromTableWhereOneEqualsTwo(
-              databaseOne,
+              databaseNameOne,
               TABLE_NAME as DatabaseTableNames,
               'filepath',
               INITIAL_FILE_PATH
             )
             count ++
           } else {
-            throw new Error(`filePath was not updated for ${databaseTwo}.\nDatabase indexes were not changed.`)
+            throw new Error(`filePath was not updated for ${databaseNameTwo}.\nDatabase indexes were not changed.`)
           }
         }
       }
       const PLURAL = count > 1 ? 'es' : ''
       SarutaLogger.success(
-        `${count} production index${PLURAL} created and ${count} staging index${PLURAL} removed.`
+        `${count} ${databaseNameTwo} index${PLURAL} created and ${count} ${databaseNameOne} index${PLURAL} removed.`
       )
 
     } catch (error) {
       throw new Error(
-        `Error while moving ${databaseOne} database entry into ${databaseTwo}. State unclear.`,
+        `Error while moving ${databaseNameOne} database entry into ${databaseNameTwo}. State unclear.`,
         { cause: error }
       )
     }

@@ -11,15 +11,14 @@ export class IndexController {
 
     try {
       const VIDEO_TYPE = req.params.videoType
-      let count: number
 
       if (! VIDEO_TYPE) {
-        count = await IndexController.indexAllStagingDirectories()
-        res.status(200).send(`Successfully indexed ${count} files.\n`)
+        res.sendStatus(200)
+        await IndexController.indexAllStagingDirectories()
       } else if (Validators.isVideoType(VIDEO_TYPE)) {
         const NULL_VIDEO = VideoFactory.createNullFromVideoType(VIDEO_TYPE)
-        count = await IndexController.indexOneStagingDirectory(NULL_VIDEO)
-        res.status(200).send(`Successfully indexed ${count} files.\n`)
+        res.sendStatus(200)
+        await IndexController.indexOneStagingDirectory(NULL_VIDEO)
       } else {
         res.sendStatus(500)
         next(new Error('Passed an invalid video type.'))
@@ -54,7 +53,8 @@ export class IndexController {
     const NULL_MISC_VIDEO = VideoFactory.createNullFromVideoType(VideoTypes.Misc)
     count += await this.indexOneStagingDirectory(NULL_MISC_VIDEO)
 
-    SarutaLogger.success(`${count} staging file${count === 1 ? '' : 's'} indexed in total.`)
+    const PLURAL = count > 1 ? 's' : ''
+    SarutaLogger.success(`${count} staging file${PLURAL} indexed in total.`)
 
     return count
   }
@@ -80,8 +80,9 @@ export class IndexController {
       throw new Error(`Unable to index staging directory: ${nullMedia.getStagingDirectory()}`, { cause: error })
     }
 
-    SarutaLogger.success(
-      `${count} staging file${count === 1 ? '' : 's'} indexed inside: ${nullMedia.getStagingDirectory()}`
+    SarutaLogger.data(
+      `Staging file${count === 1 ? '' : 's'} indexed in "${nullMedia.getStagingDirectory()}":`,
+      String(count)
     )
 
     return count

@@ -27,14 +27,18 @@ export class GAI {
       workingArray.push(FILE_PATH)
 
       if (((INDEX + 1) % 30) === 0) {
-        SarutaLogger.info(`Attempting to parse files ${INDEX - 28}-${INDEX + 1} of ${filePaths.length}...`)
+        SarutaLogger.data(
+          'Attempting to parse files',
+          `${INDEX - 28}-${INDEX + 1} of ${filePaths.length}...`
+        )
         const TEN_VIDEO_FILES = await this.parseSomeMediaData(workingArray, prompt)
         videoFiles = videoFiles.concat(TEN_VIDEO_FILES)
         workingArray = []
 
       } else if (INDEX + 1 === filePaths.length) {
-        SarutaLogger.info(
-          `Attempting to parse files ${(Math.floor(INDEX / 30) * 30) + 1}-${INDEX+1} of ${filePaths.length}...`
+        SarutaLogger.data(
+          'Attempting to parse files',
+          `${(Math.floor(INDEX / 30) * 30) + 1}-${INDEX+1} of ${filePaths.length}...`
         )
         const UP_TO_NINE_VIDEO_FILES = await this.parseSomeMediaData(workingArray, prompt)
         videoFiles = videoFiles.concat(UP_TO_NINE_VIDEO_FILES)

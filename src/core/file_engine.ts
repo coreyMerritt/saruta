@@ -105,8 +105,8 @@ export class FileEngine {
 
     SarutaLogger.info(`Attempting to move files from staging to ${landing}...`)
 
-    let count = 0
     for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
+      let count = 0
       for (const [, MEDIA] of validationResponse.tables[TABLE_NAME].entries()) {
         let newFilePath: string
         if (landing === LandingPoints.Production) {
@@ -133,7 +133,7 @@ export class FileEngine {
       }
 
       SarutaLogger.success(
-        `${count} staging file${count > 1 ? 's' : ''} moved to ${landing}.`
+        `${count} ${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${landing}.`
       )
     }
   }
