@@ -2,89 +2,68 @@ import { NextFunction, Request, Response } from 'express'
 import { Media, MediaTypes } from '../../media/media.js'
 import { DatabaseNames, DatabaseTableNames } from '../../configuration/db/index.js'
 import { Database, FileEngine, SarutaLogger, Validators } from '../../core/index.js'
-import { Video, VideoFactory } from '../../media/video/index.js'
+import { Video, VideoFactory, VideoTypes } from '../../media/video/index.js'
 import { Configs } from '../../configuration/configs.js'
+import { VideoTypeDirectories } from '../../configuration/directories/video_type_directories.js'
 
 
 export class LintController {
     
-    public static async lintDatabase(req: Request, res: Response, next: NextFunction) {
-        const databaseName = req.params.databaseName
-        const mediaType = req.params.mediaType
-        const secondaryType = req.params.videoType
+    public static async lintDatabases(req: Request, res: Response, next: NextFunction) {
 
-        var databaseNamesToLint: DatabaseNames[] = []
-        if (databaseName && Validators.isDatabaseName(databaseName)) {
-            databaseNamesToLint.push(databaseName)
-        } else {
-            databaseNamesToLint = Object.values(Configs.databaseNames)
-        }
-
-        for (const [, databaseName] of databaseNamesToLint.entries()) {
-            if (!mediaType) {
-                await this.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName)
-                res.status(200).send(`Successfully linted: ${databaseName}`)
-    
-            } else {
-                if (!Validators.isMediaType(mediaType)) {
-                    res.sendStatus(500)
-                    next(new Error(`Was given an invalid media type.`))
-                } else if (!secondaryType) {
-                    res.sendStatus(500)
-                    next(new Error(`Was not given a secondary type.`))
-                }
-    
+        for (const [, databaseName] of Object.values(Configs.databaseNames).entries()) {
+            for (const [, mediaType] of Object.values(MediaTypes).entries()) {
                 switch (mediaType) {
                     case MediaTypes.Video:
-                        if (!Validators.isVideoType(secondaryType)) {
-                            res.sendStatus(500)
-                            next(new Error(`secondary type is not a valid video type.`))
-                            break
-    
-                        } else {
-                            try {
-                                await this.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, Video.getTableNameFromVideoType(secondaryType))
-                                res.status(200).send(`Successfully linted: ${secondaryType}`)
-                                break
-                            } catch (error) {
-                                res.sendStatus(500)
-                                next(new Error(`Failed to lint: ${secondaryType}`))
-                                break
+                        for (const [, videoType] of Object.values(VideoTypes).entries()) {
+                            switch (videoType) {
+                                case VideoTypes.Animation:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.Animation)
+                                    break
+                                case VideoTypes.Anime:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.Anime)
+                                    break
+                                case VideoTypes.Misc:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.MiscVideo)
+                                    break
+                                case VideoTypes.Movie:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.Movies)
+                                    break
+                                case VideoTypes.Show:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.Shows)
+                                    break
+                                case VideoTypes.Standup:
+                                    await LintController.removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName, DatabaseTableNames.Standup)
+                                    break
+                                default:
+                                    console.debug(videoType)
+                                    next(new Error(`Trying to lint an undefined videoType.`))
                             }
                         }
+                        break
+                    default:
+                        next(new Error(`Trying to lint an undefined mediaType.`))
                 }
             }
         }
+        SarutaLogger.success('Successfully linted all tables in all databases.')
+        res.sendStatus(200)
     }
 
-    private static async removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName: DatabaseNames, tableName?: DatabaseTableNames): Promise<void> {
-        if (!tableName) {
-            SarutaLogger.info(`Removing invalid entries from: ${databaseName}`)
-        }
-
+    private static async removeEntriesThatNoLongerHaveCorrespondingFiles(databaseName: DatabaseNames, tableName: DatabaseTableNames): Promise<void> {
         try {
-            var mediaToCheck: Media[] = []
-            
-            if (tableName && Validators.isDatabaseTable(tableName)) {
-                const mediaInTable = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
-                mediaToCheck = mediaInTable
-            } else {
-                var allMediaInDatabase: Media[] = []
-                for (const [, tableName] of Object.values(DatabaseTableNames).entries()) {
-                    allMediaInDatabase = allMediaInDatabase.concat(await Database.getDatabaseEntriesFromTable(databaseName, tableName))
-                }
-                mediaToCheck = allMediaInDatabase
-            }
+            const mediaToCheck = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
 
             for (const [, media] of mediaToCheck.entries()) {
-                if (!FileEngine.fileExists(media.filePath)) {
+                console.debug(`media.filePath ${media.filePath}`)
+                if (! await FileEngine.fileExists(media.filePath)) {
+                    console.debug("~~~~~~~~~ DOES NOT EXIST ~~~~~~~~~~~~~~~~~")
                     const trueMedia = VideoFactory.createVideoFromObject(media)
                     await Database.removeMediaFromTable(databaseName, trueMedia)
                 }
             }
 
-            SarutaLogger.success(`Successfully linted database: ${databaseName}`)
-
+            SarutaLogger.data('Linted', `${databaseName} -> ${tableName}`)
         } catch (error) {
             throw new Error(`Unable to lint database: ${databaseName}`, { cause: error })
         }

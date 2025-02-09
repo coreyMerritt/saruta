@@ -91,55 +91,69 @@ export class FileEngine {
                 }
 
 
-                // Experimenting with proper callback structure here. Dear god.
-                 await fs.mkdir(path.dirname(newFilePath), { recursive: true }, (err)=> {
-                    if (err) {
-                        SarutaLogger.error(
-                            Error(
-                                `Failed to make directory: ${newFilePath}`,
-                                { cause: err }
-                            )
+                try {
+                    await FileEngine.moveFileTo(media.filePath, newFilePath)
+                    media.filePath = newFilePath
+                    count++
+                } catch (error) {
+                    SarutaLogger.error(
+                        Error(
+                            `Failed to move file: ${media.filePath}`,
+                            { cause: error }
                         )
+                    )
+                }
+            }
+
+            SarutaLogger.success(
+                `${count} staging file${count > 1 ? 's' : ''} moved to ${landing}.`
+            )
+        }
+    }
+
+    private static async moveFileTo(oldFilePath: string, newFilePath: string) {
+        // Experimenting with proper callback structure here. Dear god.
+        fs.mkdir(path.dirname(newFilePath), { recursive: true }, (error)=> {
+            if (error) {
+                SarutaLogger.error(
+                    Error(
+                        `Failed to make directory: ${newFilePath}`,
+                        { cause: error }
+                    )
+                )
+
+            } else {
+                fs.access(oldFilePath, (error) => {
+                    if (error) {
+                        SarutaLogger.important(`${oldFilePath} does not exist or cannot be accessed.`)
+                    
                     } else {
-                        fs.access(media.filePath, (err) => {
-                            if (err) {
-                                SarutaLogger.error(
-                                    Error(
-                                        `Unable to access: ${media.filePath}`,
-                                        { cause: err }
-                                    )
-                                )
-                            } else {
-                                fs.rename(media.filePath, newFilePath, (err) => {
-                                    if (err) {
-                                        SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
+                        fs.rename(oldFilePath, newFilePath, (error) => {
+                            if (error) {
+                                SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
+                                
+                                fs.copyFile(oldFilePath, newFilePath, (error) => {
+                                    if (error) {
+                                        SarutaLogger.error(
+                                            Error(
+                                                `Unable to copy 1 to 2\n
+                                                1: ${oldFilePath}\n
+                                                2: ${newFilePath}`,
+                                                { cause: error }
+                                            )
+                                        )
+                                    
+                                    } else {    
+                                        FileEngine.cleanStagingDirectory()
                                         
-                                        fs.copyFile(media.filePath, newFilePath, (err) => {
-                                            if (err) {
+                                        fs.unlink(oldFilePath, (error) => {
+                                            if (error) {
                                                 SarutaLogger.error(
                                                     Error(
-                                                        `Unable to copy 1 to 2\n
-                                                        1: ${media.filePath}\n
-                                                        2: ${newFilePath}`,
-                                                        { cause: err }
+                                                        `Unable to unlink: ${oldFilePath}`,
+                                                        { cause: error }
                                                     )
                                                 )
-                                            } else {
-                                                fs.unlink(media.filePath, (err) => {
-                                                    if (err) {
-                                                        SarutaLogger.error(
-                                                            Error(
-                                                                `Unable to unlink: ${media.filePath}`,
-                                                                { cause: err }
-                                                            )
-                                                        )
-                                                    } else {
-                                                        media.filePath = newFilePath
-                                                        FileEngine.cleanStagingDirectory()
-                                                        count++
-                                                        SarutaLogger.success(`${count} staging file${count > 1 ? 's' : ''} moved to production.`)
-                                                    }
-                                                })
                                             }
                                         })
                                     }
@@ -149,9 +163,7 @@ export class FileEngine {
                     }
                 })
             }
-        }
-
-        
+        })
     }
 
     private static async cleanStagingDirectory(): Promise<void> {

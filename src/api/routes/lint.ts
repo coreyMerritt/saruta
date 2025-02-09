@@ -5,7 +5,7 @@ import { LintController } from '../controllers/lint.js'
 
 const router = express.Router()
 
-router.route(`/lint/:databaseName?/:mediaType?/:secondaryType?`)
-    .post(asyncHandler(LintController.lintDatabase))
+router.route(`/lint`)
+    .post(asyncHandler(LintController.lintDatabases))
 
 export default router
