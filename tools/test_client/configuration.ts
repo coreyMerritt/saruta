@@ -3,11 +3,15 @@ export enum Directories {
     ClientDirectoryBackup = `${ClientDirectory}/backup`
 }
 
+
+
 export enum Files {
-    PendingValidation = `pending.yml`,
-    AcceptedValidation = `accepted.yml`,
-    RejectedValidation = `rejected.yml`
+    PendingValidation = 'pending.yml',
+    AcceptedValidation = 'accepted.yml',
+    RejectedValidation = 'rejected.yml'
 }
+
+
 
 export enum Paths {
     PendingValidation = `${Directories.ClientDirectory}/${Files.PendingValidation}`,

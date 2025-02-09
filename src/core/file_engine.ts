@@ -5,21 +5,30 @@ import fs from 'fs'
 import { Configs } from '../configuration/configs.js'
 
 
+
 interface TableRequest {
     [tableName: string]: Media[]
 }
+
+
 
 interface TableResponse {
     [tableName: string]: Media[]
 }
 
+
+
 export interface ValidationRequest {
     tables: TableRequest
 }
 
+
+
 export interface ValidationResponse {
     tables: TableResponse
 }
+
+
 
 enum LandingPoints {
     Staging = 'staging',
@@ -28,184 +37,208 @@ enum LandingPoints {
 }
 
 
+
 export class FileEngine {
 
-    public static async fileExists(filePath: string): Promise<boolean> {
-        try {
-            fs.accessSync(filePath)
-            return true
-        } catch {
-            return false
-        }
+  public static async fileExists(filePath: string): Promise<boolean> {
+    try {
+      fs.accessSync(filePath)
+
+      return true
+    } catch {
+      return false
     }
-
-    public static async moveStagingFilesToProduction(validationResponse: ValidationResponse): Promise<void> {
-        await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Production)
-    }
-
-    public static async moveStagingFilesToRejected(validationResponse: ValidationResponse): Promise<void> {
-        await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Rejection)
-    }
-
-    public static async getFilePaths(directoryToCheck: string, extensionsToMatch: string[]): Promise<string[]> {
-        try {
-            const files = fs.readdirSync(directoryToCheck)
-            var filesMatchingExtension: string[] = []
-
-            for (const [, filePath] of files.entries()) {
-                const fullPath = path.join(directoryToCheck, filePath)
-                const fileExtension = path.extname(filePath)
-                const stats = fs.statSync(fullPath)
-            
-                if (stats.isDirectory()) {
-                    const nestedFiles = await FileEngine.getFilePaths(fullPath, extensionsToMatch)
-                    filesMatchingExtension = filesMatchingExtension.concat(nestedFiles)
-                } else {
-                    const isProperFileExtension = extensionsToMatch.some(extensionToMatch => extensionToMatch === fileExtension);
-                    if (isProperFileExtension) {
-                        filesMatchingExtension.push(fullPath)
-                        SarutaLogger.data(`Added file to be indexed`, fullPath)
-                    }
-                }
-            }
-        } catch (error) {
-            throw new Error(`Failed to get file paths for: ${directoryToCheck}`, { cause: error })
-        }
-
-        return filesMatchingExtension
-    }
-
-    private static async moveStagingFilesToPath(validationResponse: ValidationResponse, landing: LandingPoints): Promise<void> {
-        SarutaLogger.info(`Attempting to move files from staging to ${landing}...`)
-
-        var count = 0
-        for (const [, tableName] of Object.keys(validationResponse.tables).entries()) {
-            for (var [, media] of validationResponse.tables[tableName].entries()) {
-                var newFilePath: string
-                if (landing === LandingPoints.Production) {
-                    newFilePath = media.getProductionFilePath()
-                } else if (landing === LandingPoints.Rejection) {
-                    newFilePath = media.getRejectFilePath()
-                } else {
-                    throw new Error (`Landing point for staging files is not yet configured.`)
-                }
+  }
 
 
-                try {
-                    await FileEngine.moveFileTo(media.filePath, newFilePath)
-                    media.filePath = newFilePath
-                    count++
-                } catch (error) {
-                    SarutaLogger.error(
-                        Error(
-                            `Failed to move file: ${media.filePath}`,
-                            { cause: error }
-                        )
-                    )
-                }
-            }
 
-            SarutaLogger.success(
-                `${count} staging file${count > 1 ? 's' : ''} moved to ${landing}.`
+  public static async moveStagingFilesToProduction(validationResponse: ValidationResponse): Promise<void> {
+    await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Production)
+  }
+
+
+
+  public static async moveStagingFilesToRejected(validationResponse: ValidationResponse): Promise<void> {
+    await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Rejection)
+  }
+
+
+
+  public static async getFilePaths(directoryToCheck: string, extensionsToMatch: string[]): Promise<string[]> {
+    const FILE_MATCHING_EXTENSION: string[] = []
+
+    try {
+      const FILES = fs.readdirSync(directoryToCheck)
+
+      for (const [, FILE_NAME] of FILES.entries()) {
+        const FILE_PATH = path.join(directoryToCheck, FILE_NAME)
+        const FILE_EXT = path.extname(FILE_NAME)
+        const STATS = fs.statSync(FILE_PATH)
+
+        if (STATS.isDirectory()) {
+          const NESTED_FILES = await FileEngine.getFilePaths(FILE_PATH, extensionsToMatch)
+          FILE_MATCHING_EXTENSION.push(...NESTED_FILES)
+        } else {
+          const IS_PROPER_FILE_EXT =
+            extensionsToMatch.some(
+              (extensionToMatch: string) => extensionToMatch === FILE_EXT
             )
+          if (IS_PROPER_FILE_EXT) {
+            FILE_MATCHING_EXTENSION.push(FILE_PATH)
+            SarutaLogger.data('Added file to be indexed.', FILE_PATH)
+          }
         }
+      }
+    } catch (error) {
+      throw new Error(`Failed to get file paths for: ${directoryToCheck}`, { cause: error })
     }
 
-    private static async moveFileTo(oldFilePath: string, newFilePath: string) {
-        // Experimenting with proper callback structure here. Dear god.
-        fs.mkdir(path.dirname(newFilePath), { recursive: true }, (error)=> {
-            if (error) {
-                SarutaLogger.error(
-                    Error(
-                        `Failed to make directory: ${newFilePath}`,
-                        { cause: error }
-                    )
-                )
+    return FILE_MATCHING_EXTENSION
+  }
 
-            } else {
-                fs.access(oldFilePath, (error) => {
-                    if (error) {
-                        SarutaLogger.important(`${oldFilePath} does not exist or cannot be accessed.`)
-                    
-                    } else {
-                        fs.rename(oldFilePath, newFilePath, (error) => {
-                            if (error) {
-                                SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
-                                
-                                fs.copyFile(oldFilePath, newFilePath, (error) => {
-                                    if (error) {
-                                        SarutaLogger.error(
-                                            Error(
-                                                `Unable to copy 1 to 2\n
-                                                1: ${oldFilePath}\n
-                                                2: ${newFilePath}`,
-                                                { cause: error }
-                                            )
-                                        )
-                                    
-                                    } else {    
-                                        FileEngine.cleanStagingDirectory()
-                                        
-                                        fs.unlink(oldFilePath, (error) => {
-                                            if (error) {
-                                                SarutaLogger.error(
-                                                    Error(
-                                                        `Unable to unlink: ${oldFilePath}`,
-                                                        { cause: error }
-                                                    )
-                                                )
-                                            }
-                                        })
-                                    }
-                                })
-                            }
-                        })
-                    }
-                })
-            }
-        })
-    }
 
-    private static async cleanStagingDirectory(): Promise<void> {
-        for (const [, directory] of Object.values(Configs.videoTypeDirectories.staging).entries()) {
-            FileEngine.deleteEmptyDirectories(directory)
+
+  private static async moveStagingFilesToPath(
+    validationResponse: ValidationResponse,
+    landing: LandingPoints
+  ): Promise<void> {
+
+    SarutaLogger.info(`Attempting to move files from staging to ${landing}...`)
+
+    let count = 0
+    for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
+      for (const [, MEDIA] of validationResponse.tables[TABLE_NAME].entries()) {
+        let newFilePath: string
+        if (landing === LandingPoints.Production) {
+          newFilePath = MEDIA.getProductionFilePath()
+        } else if (landing === LandingPoints.Rejection) {
+          newFilePath = MEDIA.getRejectFilePath()
+        } else {
+          throw new Error ('Landing point for staging files is not yet configured.')
         }
-    }
 
-    private static async deleteEmptyDirectories(directory: string): Promise<boolean> {
-        var files
 
         try {
-            files = fs.readdirSync(directory)
+          await FileEngine.moveFileTo(MEDIA.filePath, newFilePath)
+          MEDIA.filePath = newFilePath
+          count ++
         } catch (error) {
-            return true
+          SarutaLogger.error(
+            Error(
+              `Failed to move file: ${MEDIA.filePath}`,
+              { cause: error }
+            )
+          )
         }
-    
-        for (const file of files) {
-            const fullPath = path.join(directory, file)
-            var stats
+      }
 
-            try {
-                stats = fs.statSync(fullPath)
-            } catch (error) {
-                continue
-            }
-    
-            if (stats.isDirectory()) {
-                const isDirectoryEmpty = await FileEngine.deleteEmptyDirectories(fullPath)
-                if (isDirectoryEmpty) {
-                    try {
-                        fs.rmdirSync(fullPath)
-                    } catch {
-                        // Not a genuine error
-                    }
-                }
-            }
-        }
-    
-        const remainingFiles = fs.readdirSync(directory)
-        const isCurrentDirectoryEmpty = remainingFiles.length === 0
-    
-        return isCurrentDirectoryEmpty
+      SarutaLogger.success(
+        `${count} staging file${count > 1 ? 's' : ''} moved to ${landing}.`
+      )
     }
+  }
+
+
+
+  private static async moveFileTo(oldFilePath: string, newFilePath: string): Promise<void> {
+    // Playing with traditional callback structure here. Dear god.
+    fs.mkdir(path.dirname(newFilePath), { recursive: true }, (error: NodeJS.ErrnoException | null) => {
+      if (error) {
+        SarutaLogger.error(
+          Error(
+            `Failed to make directory: ${newFilePath}`,
+            { cause: error }
+          )
+        )
+
+      } else {
+        fs.access(oldFilePath, (error: NodeJS.ErrnoException | null) => {
+          if (error) {
+            SarutaLogger.important(`${oldFilePath} does not exist or cannot be accessed.`)
+
+          } else {
+            fs.rename(oldFilePath, newFilePath, (error: NodeJS.ErrnoException | null) => {
+              if (error) {
+                SarutaLogger.info('Cross-Disk move detected... Copying instead of renaming...')
+
+                fs.copyFile(oldFilePath, newFilePath, (error: NodeJS.ErrnoException | null) => {
+                  if (error) {
+                    SarutaLogger.error(
+                      Error(
+                        `Unable to copy 1 to 2\n
+                        1: ${oldFilePath}\n
+                        2: ${newFilePath}`,
+                        { cause: error }
+                      )
+                    )
+
+                  } else {
+                    FileEngine.cleanStagingDirectory()
+
+                    fs.unlink(oldFilePath, (error: NodeJS.ErrnoException | null) => {
+                      if (error) {
+                        SarutaLogger.error(
+                          Error(
+                            `Unable to unlink: ${oldFilePath}`,
+                            { cause: error }
+                          )
+                        )
+                      }
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+
+
+  private static async cleanStagingDirectory(): Promise<void> {
+    for (const [, DIRECTORY] of Object.values(Configs.videoTypeDirectories.staging).entries()) {
+      FileEngine.deleteEmptyDirectories(DIRECTORY)
+    }
+  }
+
+
+
+  private static async deleteEmptyDirectories(directory: string): Promise<boolean> {
+    let files: string[]
+
+    try {
+      files = fs.readdirSync(directory)
+    } catch {
+      return true
+    }
+
+    for (const FILE of files) {
+      const FILE_PATH = path.join(directory, FILE)
+      let stats
+
+      try {
+        stats = fs.statSync(FILE_PATH)
+      } catch {
+        continue
+      }
+
+      if (stats.isDirectory()) {
+        const IS_DIR_EMPTY = await FileEngine.deleteEmptyDirectories(FILE_PATH)
+        if (IS_DIR_EMPTY) {
+          try {
+            fs.rmdirSync(FILE_PATH)
+          } catch {
+            // Not a genuine error
+          }
+        }
+      }
+    }
+
+    const REMAINING_FILES = fs.readdirSync(directory)
+    const IS_CURRENT_DIR_EMPTY = REMAINING_FILES.length === 0
+
+    return IS_CURRENT_DIR_EMPTY
+  }
 }

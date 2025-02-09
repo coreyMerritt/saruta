@@ -1,4 +1,4 @@
 export enum BackupDirectories {
-    Out = `saruta/backups/out`,
-    In = `saruta/backups/in`
+  Out = 'saruta/backups/out',
+  In = 'saruta/backups/in'
 }

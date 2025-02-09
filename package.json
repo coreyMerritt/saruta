@@ -4,11 +4,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",  
-
+    "build": "tsc -p tsconfig.json",
     "start": "npm run saruta",
     "saruta": "tsc -p tsconfig.json && node ./dist/src/startup/start.js",
-
     "client": "tsc -p tsconfig.test_client.json && node ./dist/tools/test_client/start.js"
   },
   "keywords": [],
@@ -18,6 +16,7 @@
   "devDependencies": {
     "@types/ansi-colors": "^3.2.0",
     "@types/chalk": "^0.4.31",
+    "@types/eslint": "^9.6.1",
     "@types/fluent-ffmpeg": "^2.1.26",
     "@types/node": "^22.7.5",
     "@types/node-cron": "^3.0.11",
@@ -25,10 +24,13 @@
     "@types/readline-sync": "^1.4.8",
     "@types/sequelize": "^4.28.20",
     "@types/yaml": "^1.9.6",
+    "eslint": "^9.20.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "fs": "^0.0.1-security",
     "node-cron": "^3.0.3",
     "types": "file:../../../../../prompt-sync",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.23.0"
   },
   "dependencies": {
     "@types/express": "^4.17.21",
@@ -38,13 +40,13 @@
     "express": "^4.21.0",
     "express-async-handler": "^1.2.0",
     "fluent-ffmpeg": "^2.1.3",
-    "saruta": "file:",
     "madge": "^8.0.0",
     "mysql2": "^3.11.3",
     "mysqldump": "^3.2.0",
     "openai": "^4.68.1",
     "prompt-sync": "^4.2.0",
     "readline-sync": "^1.4.10",
+    "saruta": "file:",
     "sequelize": "^6.37.4",
     "synaptic": "^1.1.4",
     "typescript-json-schema": "^0.65.1"

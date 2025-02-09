@@ -1,34 +1,36 @@
 export class SarutaTime {
 
-    public static getCurrentDateTime(fileFormat?: boolean): string {
-        const now = new Date()
+  public static getCurrentDateTime(fileFormat?: boolean): string {
+    const NOW = new Date()
 
-        const year = now.getFullYear()
-        const month = String(now.getMonth() + 1).padStart(2, '0')
-        const day = String(now.getDate()).padStart(2, '0')
-    
-        const hours = String(now.getHours()).padStart(2, '0')
-        const minutes = String(now.getMinutes()).padStart(2, '0')
-        const seconds = String(now.getSeconds()).padStart(2, '0')
-        const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
-        if (fileFormat) {
-            return `${year}-${month}-${day}__${hours}-${minutes}-${seconds}.${milliseconds}`
-        } else {
-            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}.${milliseconds}`
-        }
-    }
+    const YEAR = NOW.getFullYear()
+    const MONTH = String(NOW.getMonth() + 1).padStart(2, '0')
+    const DAY = String(NOW.getDate()).padStart(2, '0')
 
-    public static getCurrentTime(fileFormat?: boolean): string {
-        const now = new Date()
-    
-        const hours = String(now.getHours()).padStart(2, '0')
-        const minutes = String(now.getMinutes()).padStart(2, '0')
-        const seconds = String(now.getSeconds()).padStart(2, '0')
-        const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
-        if (fileFormat) {
-            return `${hours}-${minutes}-${seconds}.${milliseconds}`
-        } else {
-            return `${hours}:${minutes}:${seconds}.${milliseconds}`
-        }
+    const HOURS = String(NOW.getHours()).padStart(2, '0')
+    const MINUTES = String(NOW.getMinutes()).padStart(2, '0')
+    const SECONDS = String(NOW.getSeconds()).padStart(2, '0')
+    const MILISECONDS = String(NOW.getMilliseconds()).padStart(3, '0')
+    if (fileFormat) {
+      return `${YEAR}-${MONTH}-${DAY}__${HOURS}-${MINUTES}-${SECONDS}.${MILISECONDS}`
+    } else {
+      return `${YEAR}/${MONTH}/${DAY} ${HOURS}:${MINUTES}:${SECONDS}.${MILISECONDS}`
     }
+  }
+
+
+
+  public static getCurrentTime(fileFormat?: boolean): string {
+    const NOW = new Date()
+
+    const HOURS = String(NOW.getHours()).padStart(2, '0')
+    const MINUTES = String(NOW.getMinutes()).padStart(2, '0')
+    const SECONDS = String(NOW.getSeconds()).padStart(2, '0')
+    const MILISECONDS = String(NOW.getMilliseconds()).padStart(3, '0')
+    if (fileFormat) {
+      return `${HOURS}-${MINUTES}-${SECONDS}.${MILISECONDS}`
+    } else {
+      return `${HOURS}:${MINUTES}:${SECONDS}.${MILISECONDS}`
+    }
+  }
 }

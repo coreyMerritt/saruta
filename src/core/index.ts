@@ -1,4 +1,4 @@
-export * from './ai.js'
+export * from './gai.js'
 export * from './database.js'
 export * from './file_engine.js'
 export * from './saruta_logger.js'

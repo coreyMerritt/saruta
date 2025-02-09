@@ -3,9 +3,9 @@ import asyncHandler from 'express-async-handler'
 import { LintController } from '../controllers/lint.js'
 
 
-const router = express.Router()
+const ROUTER = express.Router()
 
-router.route(`/lint`)
-    .post(asyncHandler(LintController.lintDatabases))
+ROUTER.route('/lint')
+  .post(asyncHandler(LintController.lintDatabases))
 
-export default router
+export default ROUTER

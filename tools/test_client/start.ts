@@ -1,37 +1,39 @@
-import { Directories, Paths } from "./configuration.js"
-import fs from 'fs/promises'
+import { Directories, Paths } from './configuration.js'
 import fsSync from 'fs'
-import { Menus } from "./menus.js"
+import { Menus } from './menus.js'
+
 
 
 class Startup {
-    
-    public async execute(): Promise<void> {
-        try {
-            this.createDirectoriesAndFiles()
-            await new Menus().main()
-        } catch (error) {
-            console.error(error)
-        }
-    }
 
-    private createDirectoriesAndFiles(): void {
-        try {
-            for (const [, directory] of Object.values(Directories).entries()) {
-                fsSync.mkdirSync(directory, { recursive: true })
-            }
-            
-            for (const [, filePath] of Object.values(Paths).entries()) {
-                try {
-                    fsSync.accessSync(filePath)
-                } catch {
-                    fsSync.writeFileSync(filePath, "")
-                }
-            }
-        } catch (error) {
-            throw new Error(`Failed to create directories and files.`, { cause: error })
-        }
+  public async execute(): Promise<void> {
+    try {
+      this.createDirectoriesAndFiles()
+      await new Menus().main()
+    } catch (error) {
+      console.error(error)
     }
+  }
+
+
+
+  private createDirectoriesAndFiles(): void {
+    try {
+      for (const [, DIR] of Object.values(Directories).entries()) {
+        fsSync.mkdirSync(DIR, { recursive: true })
+      }
+
+      for (const [, FILE_PATH] of Object.values(Paths).entries()) {
+        try {
+          fsSync.accessSync(FILE_PATH)
+        } catch {
+          fsSync.writeFileSync(FILE_PATH, '')
+        }
+      }
+    } catch (error) {
+      throw new Error('Failed to create directories and files.', { cause: error })
+    }
+  }
 }
 
 new Startup().execute()

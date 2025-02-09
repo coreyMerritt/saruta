@@ -3,9 +3,9 @@ import asyncHandler from 'express-async-handler'
 import { IndexController } from '../controllers/index.js'
 
 
-const router = express.Router()
+const ROUTER = express.Router()
 
-router.route('/index/staging/:mediaType?/:videoType?')
-    .post(asyncHandler(IndexController.indexStagingDatabase))
+ROUTER.route('/index/staging/:mediaType?/:videoType?')
+  .post(asyncHandler(IndexController.indexStagingDatabase))
 
-export default router
+export default ROUTER

@@ -7,65 +7,74 @@ import { Configs } from '../../configuration/configs.js'
 
 export class ValidationController {
 
-    public static async getValidationRequest(req: Request, res: Response, next: NextFunction) {
-        try {
-            var validationRequest: ValidationRequest = { tables: {} }
-        
-           for (const [, tableName] of Object.values(DatabaseTableNames).entries()) {
-                validationRequest.tables[tableName] = []
-                const results = await Database.getDatabaseEntriesFromTable(Configs.databaseNames.staging, tableName)
-                for (const [, media] of results.entries()) {
-                    if (Validators.isMedia(media)) {
-                        validationRequest.tables[tableName].push(media)
-                    }
-                }
-            }
+  public static async getValidationRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const VALIDATION_REQUEST: ValidationRequest = { tables: {} }
 
-            res.status(200).send(validationRequest)
-            SarutaLogger.success(`Sent validation request.`)
-
-        } catch (error) {
-            res.sendStatus(500)
-            next(error)
+      for (const [, TABLE_NAME] of Object.values(DatabaseTableNames).entries()) {
+        VALIDATION_REQUEST.tables[TABLE_NAME] = []
+        const RESULTS = await Database.getDatabaseEntriesFromTable(Configs.databaseNames.staging, TABLE_NAME)
+        for (const [, MEDIA] of RESULTS.entries()) {
+          if (Validators.isMedia(MEDIA)) {
+            VALIDATION_REQUEST.tables[TABLE_NAME].push(MEDIA)
+          }
         }
+      }
+
+      res.status(200).send(VALIDATION_REQUEST)
+      SarutaLogger.success('Sent validation request.')
+
+    } catch (error) {
+      res.sendStatus(500)
+      next(error)
     }
+  }
 
-    public static async postAcceptedValidationResponse(req: Request, res: Response, next: NextFunction) {
-        try {
 
-            const originalValidationResponse = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
-            const validationResponseWithUpdatedFilePaths = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
-            if (Validators.isAcceptedValidationResponse(originalValidationResponse)) {
-                await FileEngine.moveStagingFilesToProduction(validationResponseWithUpdatedFilePaths)
-                await Database.moveStagingDatabaseEntriesToProduction(originalValidationResponse, validationResponseWithUpdatedFilePaths)
-                res.status(200).send('Successfully processed accepted entries.\n')
-            } else {
-                res.status(500).send(`Invalid data type.\n`)
-                next(`Data sent is not a proper validation request.`)
-            }
 
-        } catch (error) {
-            res.sendStatus(500)
-            next(error)
-        }
+  public static async postAcceptedValidationResponse(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ORIGINAL_VALIDATION_RESPONSE = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
+      const VAL_RES_WITH_UPDATE_FILE_PATHS = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
+      if (Validators.isAcceptedValidationResponse(ORIGINAL_VALIDATION_RESPONSE)) {
+        res.sendStatus(200)
+        await FileEngine.moveStagingFilesToProduction(VAL_RES_WITH_UPDATE_FILE_PATHS)
+        await Database.moveStagingDatabaseEntriesToProduction(
+          ORIGINAL_VALIDATION_RESPONSE,
+          VAL_RES_WITH_UPDATE_FILE_PATHS
+        )
+      } else {
+        res.status(500).send('Invalid data type.\n')
+        next('Data sent is not a proper validation request.')
+      }
+
+    } catch (error) {
+      res.sendStatus(500)
+      next(error)
     }
+  }
 
-    public static async postRejectedValidationResponse(req: Request, res: Response, next: NextFunction) {
-        try {
-            const originalValidationResponse = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
-            const validationResponseWithUpdatedFilePaths = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
-            if (Validators.isValidationResponse(originalValidationResponse)) {
-                await FileEngine.moveStagingFilesToRejected(validationResponseWithUpdatedFilePaths)
-                await Database.moveStagingDatabaseEntriesToRejected(originalValidationResponse, validationResponseWithUpdatedFilePaths)
-                res.status(200).send('Successfully processed rejected entries.\n')
-            } else {
-                res.status(500).send(`Invalid data type.\n`)
-                next(`Data sent is not a proper validation request.`)
-            }
 
-        } catch (error) {
-            res.sendStatus(500)
-            next(error)
-        }
+
+  public static async postRejectedValidationResponse(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ORIGINAL_VALIDATION_RESPONSE = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
+      const VAL_RES_WITH_UPDATE_FILE_PATHS = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
+      if (Validators.isValidationResponse(ORIGINAL_VALIDATION_RESPONSE)) {
+        res.sendStatus(200).send('Successfully processed rejected entries.\n')
+        await FileEngine.moveStagingFilesToRejected(VAL_RES_WITH_UPDATE_FILE_PATHS)
+        await Database.moveStagingDatabaseEntriesToRejected(
+          ORIGINAL_VALIDATION_RESPONSE,
+          VAL_RES_WITH_UPDATE_FILE_PATHS
+        )
+      } else {
+        res.status(500).send('Invalid data type.\n')
+        next('Data sent is not a proper validation request.')
+      }
+
+    } catch (error) {
+      res.sendStatus(500)
+      next(error)
     }
+  }
 }
