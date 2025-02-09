@@ -1,7 +1,7 @@
 import { SarutaLogger } from '../core/index.js'
 import { Media } from '../media/media.js'
 import path from 'path'
-import fs from 'fs'
+import fs from 'fs/promises'
 import { Configs } from '../configuration/configs.js'
 
 
@@ -42,7 +42,7 @@ export class FileEngine {
 
   public static async fileExists(filePath: string): Promise<boolean> {
     try {
-      fs.accessSync(filePath)
+      await fs.access(filePath)
 
       return true
     } catch {
@@ -68,12 +68,12 @@ export class FileEngine {
     const FILE_MATCHING_EXTENSION: string[] = []
 
     try {
-      const FILES = fs.readdirSync(directoryToCheck)
+      const FILES = await fs.readdir(directoryToCheck)
 
       for (const [, FILE_NAME] of FILES.entries()) {
         const FILE_PATH = path.join(directoryToCheck, FILE_NAME)
         const FILE_EXT = path.extname(FILE_NAME)
-        const STATS = fs.statSync(FILE_PATH)
+        const STATS = await fs.stat(FILE_PATH)
 
         if (STATS.isDirectory()) {
           const NESTED_FILES = await FileEngine.getFilePaths(FILE_PATH, extensionsToMatch)
@@ -122,6 +122,7 @@ export class FileEngine {
           await FileEngine.moveFileTo(MEDIA.filePath, newFilePath)
           MEDIA.filePath = newFilePath
           count ++
+          SarutaLogger.data(`Moved to ${landing}`, MEDIA.title)
         } catch (error) {
           SarutaLogger.error(
             Error(
@@ -141,59 +142,24 @@ export class FileEngine {
 
 
   private static async moveFileTo(oldFilePath: string, newFilePath: string): Promise<void> {
-    // Playing with traditional callback structure here. Dear god.
-    fs.mkdir(path.dirname(newFilePath), { recursive: true }, (error: NodeJS.ErrnoException | null) => {
-      if (error) {
-        SarutaLogger.error(
-          Error(
-            `Failed to make directory: ${newFilePath}`,
-            { cause: error }
-          )
-        )
+    try {
+      await fs.mkdir(path.dirname(newFilePath), { recursive: true })
+      await fs.access(oldFilePath)
 
-      } else {
-        fs.access(oldFilePath, (error: NodeJS.ErrnoException | null) => {
-          if (error) {
-            SarutaLogger.important(`${oldFilePath} does not exist or cannot be accessed.`)
-
-          } else {
-            fs.rename(oldFilePath, newFilePath, (error: NodeJS.ErrnoException | null) => {
-              if (error) {
-                SarutaLogger.info('Cross-Disk move detected... Copying instead of renaming...')
-
-                fs.copyFile(oldFilePath, newFilePath, (error: NodeJS.ErrnoException | null) => {
-                  if (error) {
-                    SarutaLogger.error(
-                      Error(
-                        `Unable to copy 1 to 2\n
-                        1: ${oldFilePath}\n
-                        2: ${newFilePath}`,
-                        { cause: error }
-                      )
-                    )
-
-                  } else {
-                    FileEngine.cleanStagingDirectory()
-
-                    fs.unlink(oldFilePath, (error: NodeJS.ErrnoException | null) => {
-                      if (error) {
-                        SarutaLogger.error(
-                          Error(
-                            `Unable to unlink: ${oldFilePath}`,
-                            { cause: error }
-                          )
-                        )
-                      }
-                    })
-                  }
-                })
-              }
-            })
-          }
-        })
+      try {
+        await fs.rename(oldFilePath, newFilePath)
+      } catch {
+        SarutaLogger.info('Cross-Disk move detected... Copying instead of renaming...')
+        await fs.copyFile(oldFilePath, newFilePath)
+        await fs.unlink(oldFilePath)
+        FileEngine.cleanStagingDirectory()
       }
-    })
+    } catch (error) {
+      SarutaLogger.error(Error(`File operation failed: ${newFilePath}`, { cause: error }))
+      throw error
+    }
   }
+
 
 
 
@@ -209,7 +175,7 @@ export class FileEngine {
     let files: string[]
 
     try {
-      files = fs.readdirSync(directory)
+      files = await fs.readdir(directory)
     } catch {
       return true
     }
@@ -219,7 +185,7 @@ export class FileEngine {
       let stats
 
       try {
-        stats = fs.statSync(FILE_PATH)
+        stats = await fs.stat(FILE_PATH)
       } catch {
         continue
       }
@@ -228,7 +194,7 @@ export class FileEngine {
         const IS_DIR_EMPTY = await FileEngine.deleteEmptyDirectories(FILE_PATH)
         if (IS_DIR_EMPTY) {
           try {
-            fs.rmdirSync(FILE_PATH)
+            await fs.rmdir(FILE_PATH)
           } catch {
             // Not a genuine error
           }
@@ -236,7 +202,7 @@ export class FileEngine {
       }
     }
 
-    const REMAINING_FILES = fs.readdirSync(directory)
+    const REMAINING_FILES = await fs.readdir(directory)
     const IS_CURRENT_DIR_EMPTY = REMAINING_FILES.length === 0
 
     return IS_CURRENT_DIR_EMPTY

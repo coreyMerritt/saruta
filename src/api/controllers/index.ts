@@ -81,7 +81,7 @@ export class IndexController {
     }
 
     SarutaLogger.data(
-      `Staging file${count === 1 ? '' : 's'} indexed in "${nullMedia.getStagingDirectory()}":`,
+      `Staging file${count === 1 ? '' : 's'} indexed in "${nullMedia.getStagingDirectory()}"`,
       String(count)
     )
 

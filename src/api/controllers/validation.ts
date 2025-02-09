@@ -5,6 +5,7 @@ import { VideoFactory } from '../../media/video/index.js'
 import { Configs } from '../../configuration/configs.js'
 
 
+
 export class ValidationController {
 
   public static async getValidationRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -49,7 +50,6 @@ export class ValidationController {
       }
 
     } catch (error) {
-      res.sendStatus(500)
       next(error)
     }
   }
@@ -61,19 +61,18 @@ export class ValidationController {
       const ORIGINAL_VALIDATION_RESPONSE = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
       const VAL_RES_WITH_UPDATE_FILE_PATHS = VideoFactory.buildVideosInValidationResponse(structuredClone(req.body))
       if (Validators.isValidationResponse(ORIGINAL_VALIDATION_RESPONSE)) {
-        res.sendStatus(200).send('Successfully processed rejected entries.\n')
+        res.sendStatus(200)
         await FileEngine.moveStagingFilesToRejected(VAL_RES_WITH_UPDATE_FILE_PATHS)
         await Database.moveStagingDatabaseEntriesToRejected(
           ORIGINAL_VALIDATION_RESPONSE,
           VAL_RES_WITH_UPDATE_FILE_PATHS
         )
       } else {
-        res.status(500).send('Invalid data type.\n')
+        res.status(500).send('Invalid data.\n')
         next('Data sent is not a proper validation request.')
       }
 
     } catch (error) {
-      res.sendStatus(500)
       next(error)
     }
   }

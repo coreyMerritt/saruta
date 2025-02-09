@@ -46,7 +46,7 @@ export class Database {
     try {
       // TODO: May have broken this.
       await EXEC_ASYNC(
-        `mysqldump -u ${Configs.databaseInfo.username}` +
+        `mysqldump -u ${Configs.databaseInfo.username} ` +
         `-p${Configs.databaseInfo.password} ${databaseName} ` +
         `> "${Configs.backupDirectories.out}/${databaseName}___${SarutaTime.getCurrentDateTime(true)}".sql`
       )
@@ -66,6 +66,8 @@ export class Database {
         'filePath',
         media.filePath
       )
+
+      SarutaLogger.data(`Removed from ${databaseName}`, media.filePath)
     } catch (error) {
       throw new Error(`Unable to remove ${media.filePath} from ${media.getTableName()}`, { cause: error })
     }
