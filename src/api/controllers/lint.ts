@@ -71,7 +71,9 @@ export class LintController {
     databaseName: DatabaseNames,
     tableName: DatabaseTableNames
   ): Promise<void> {
+
     try {
+      SarutaLogger.data('Linting', `${databaseName} -> ${tableName}...`)
       const MEDIA_TO_CHECK = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
 
       for (const [, MEDIA] of MEDIA_TO_CHECK.entries()) {
@@ -81,7 +83,7 @@ export class LintController {
         }
       }
 
-      SarutaLogger.data('Linted', `${databaseName} -> ${tableName}`)
+      SarutaLogger.success('\tSuccess')
     } catch (error) {
       throw new Error(`Unable to lint database: ${databaseName}`, { cause: error })
     }
