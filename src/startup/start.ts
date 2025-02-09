@@ -6,6 +6,7 @@ import express from 'express'
 import backupRoutes from '../api/routes/backup.js'
 import indexRoutes from '../api/routes/index.js'
 import validationRoutes from '../api/routes/validation.js'
+import lintRoutes from '../api/routes/lint.js'
 import { ErrorMiddleware, RequestMiddleware } from '../middleware/index.js'
 import { Configs } from '../configuration/configs.js'
 
@@ -61,6 +62,7 @@ export class Start {
         app.use(`/`, backupRoutes)
         app.use(`/`, indexRoutes)
         app.use(`/`, validationRoutes)
+        app.use(`/`, lintRoutes)
         app.use(ErrorMiddleware.execute)
     }
 

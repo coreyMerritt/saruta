@@ -90,26 +90,68 @@ export class FileEngine {
                     throw new Error (`Landing point for staging files is not yet configured.`)
                 }
 
-                try {
-                    fs.mkdirSync(path.dirname(newFilePath), { recursive: true })
-                    fs.accessSync(media.filePath)
-                    try {
-                        fs.renameSync(media.filePath, newFilePath)
-                    } catch {
-                        SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
-                        fs.copyFileSync(media.filePath, newFilePath)
-                        fs.unlinkSync(media.filePath)
+
+                // Experimenting with proper callback structure here. Dear god.
+                 await fs.mkdir(path.dirname(newFilePath), { recursive: true }, (err)=> {
+                    if (err) {
+                        SarutaLogger.error(
+                            Error(
+                                `Failed to make directory: ${newFilePath}`,
+                                { cause: err }
+                            )
+                        )
+                    } else {
+                        fs.access(media.filePath, (err) => {
+                            if (err) {
+                                SarutaLogger.error(
+                                    Error(
+                                        `Unable to access: ${media.filePath}`,
+                                        { cause: err }
+                                    )
+                                )
+                            } else {
+                                fs.rename(media.filePath, newFilePath, (err) => {
+                                    if (err) {
+                                        SarutaLogger.info(`Cross-Disk move detected... Copying instead of renaming...`)
+                                        
+                                        fs.copyFile(media.filePath, newFilePath, (err) => {
+                                            if (err) {
+                                                SarutaLogger.error(
+                                                    Error(
+                                                        `Unable to copy 1 to 2\n
+                                                        1: ${media.filePath}\n
+                                                        2: ${newFilePath}`,
+                                                        { cause: err }
+                                                    )
+                                                )
+                                            } else {
+                                                fs.unlink(media.filePath, (err) => {
+                                                    if (err) {
+                                                        SarutaLogger.error(
+                                                            Error(
+                                                                `Unable to unlink: ${media.filePath}`,
+                                                                { cause: err }
+                                                            )
+                                                        )
+                                                    } else {
+                                                        media.filePath = newFilePath
+                                                        FileEngine.cleanStagingDirectory()
+                                                        count++
+                                                        SarutaLogger.success(`${count} staging file${count > 1 ? 's' : ''} moved to production.`)
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                })
+                            }
+                        })
                     }
-                    media.filePath = newFilePath
-                    await FileEngine.cleanStagingDirectory()
-                    count++
-                } catch (error) {
-                    throw new Error(`Something went wrong while trying to move staging file to ${landing}: ${media.filePath}`, { cause: error })
-                }
+                })
             }
         }
 
-        SarutaLogger.success(`${count} staging file${count > 1 ? 's' : ''} moved to production.`)
+        
     }
 
     private static async cleanStagingDirectory(): Promise<void> {

@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
-import { Media, MediaTypes } from '../../media/media'
-import { DatabaseNames, DatabaseTableNames } from '../../configuration/db'
-import { Database, FileEngine, SarutaLogger, Validators } from '../../core'
-import { Video, VideoFactory, VideoTypes } from '../../media/video'
-import { Configs } from '../../configuration/configs'
+import { Media, MediaTypes } from '../../media/media.js'
+import { DatabaseNames, DatabaseTableNames } from '../../configuration/db/index.js'
+import { Database, FileEngine, SarutaLogger, Validators } from '../../core/index.js'
+import { Video, VideoFactory } from '../../media/video/index.js'
+import { Configs } from '../../configuration/configs.js'
 
 
 export class LintController {
