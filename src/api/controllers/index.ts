@@ -25,7 +25,6 @@ export class IndexController {
       }
 
     } catch (error) {
-      res.sendStatus(500)
       next(error)
     }
   }
@@ -72,10 +71,9 @@ export class IndexController {
         const MEDIA = await GAI.parseAllMediaData(FILTERED_FILE_PATHS, nullMedia.getPrompt())
         if (MEDIA.length > 0) {
           const INDEX_COUNT = await Database.indexFilesIntoStagingDatabase(MEDIA)
-          INDEX_COUNT ? count = INDEX_COUNT : undefined
+          count = INDEX_COUNT ? INDEX_COUNT : 0
         }
       }
-
     } catch (error) {
       throw new Error(`Unable to index staging directory: ${nullMedia.getStagingDirectory()}`, { cause: error })
     }

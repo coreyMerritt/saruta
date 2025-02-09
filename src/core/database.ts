@@ -26,9 +26,9 @@ export class Database {
     Database.stagingDatabase = Database.loadDatabase(Configs.databaseNames.staging)
     Database.productionDatabase = Database.loadDatabase(Configs.databaseNames.production)
     Database.rejectionDatabase = Database.loadDatabase(Configs.databaseNames.rejection)
-    Database.initAndSyncAllModels(Configs.databaseNames.staging)
-    Database.initAndSyncAllModels(Configs.databaseNames.production)
-    Database.initAndSyncAllModels(Configs.databaseNames.rejection)
+    await Database.initAndSyncAllModels(Configs.databaseNames.staging)
+    await Database.initAndSyncAllModels(Configs.databaseNames.production)
+    await Database.initAndSyncAllModels(Configs.databaseNames.rejection)
   }
 
 
@@ -44,7 +44,6 @@ export class Database {
   public static async backup(databaseName: DatabaseNames): Promise<void> {
     const EXEC_ASYNC = promisify(exec)
     try {
-      // TODO: May have broken this.
       await EXEC_ASYNC(
         `mysqldump -u ${Configs.databaseInfo.username} ` +
         `-p${Configs.databaseInfo.password} ${databaseName} ` +
@@ -218,7 +217,8 @@ export class Database {
 
   private static async insertMediaIntoTable(
     databaseName: DatabaseNames,
-    media: Media, tableName?: DatabaseTableNames
+    media: Media,
+    tableName?: DatabaseTableNames
   ): Promise<void> {
 
     const DATABASE = Database.determineDatabase(databaseName)
@@ -227,6 +227,10 @@ export class Database {
       const COLUMNS: string[] = ['createdAt', 'updatedAt']
       const VALUES: string[] = [':createdAt', ':updatedAt']
 
+
+      // if (! await Database.tableExists(databaseName, ADJUSTED_TABLE_NAME)) {
+      //   Database.
+      // }
       // Not sure why but .query() complains when this is upper
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const replacements: any = {
@@ -267,13 +271,13 @@ export class Database {
     try {
       for (const [, FILE_PATH] of filePaths.entries()) {
         if (await Database.filePathInDatabase(databaseName, FILE_PATH)) {
-          SarutaLogger.data('Tossing already indexed file', FILE_PATH)
+          SarutaLogger.data('Ignoring already indexed file', FILE_PATH)
           FILE_PATHS_TO_TOSS.push(FILE_PATH)
         }
       }
       filePaths = filePaths.filter((FILE_PATH: string) => ! FILE_PATHS_TO_TOSS.includes(FILE_PATH))
       if (FILE_PATHS_TO_TOSS.length > 0) {
-        SarutaLogger.important(`${FILE_PATHS_TO_TOSS.length} staging files were tossed due to already being indexed.`)
+        SarutaLogger.important(`${FILE_PATHS_TO_TOSS.length} staging files were ignored due to already being indexed.`)
       }
 
       return filePaths
@@ -309,7 +313,7 @@ export class Database {
 
 
 
-  private static initAndSyncAllModels(databaseName: DatabaseNames): void {
+  private static async initAndSyncAllModels(databaseName: DatabaseNames): Promise<void> {
     const NULL_ANIMATION = VideoFactory.createNullFromVideoType(VideoTypes.Animation)
     const NULL_ANIME = VideoFactory.createNullFromVideoType(VideoTypes.Anime)
     const NULL_MISC_VIDEO = VideoFactory.createNullFromVideoType(VideoTypes.Misc)
@@ -317,12 +321,12 @@ export class Database {
     const NULL_SHOW = VideoFactory.createNullFromVideoType(VideoTypes.Show)
     const NULL_STANDUP = VideoFactory.createNullFromVideoType(VideoTypes.Standup)
 
-    Database.initAndSyncModel(databaseName, NULL_ANIMATION)
-    Database.initAndSyncModel(databaseName, NULL_ANIME)
-    Database.initAndSyncModel(databaseName, NULL_MISC_VIDEO)
-    Database.initAndSyncModel(databaseName, NULL_MOVIE)
-    Database.initAndSyncModel(databaseName, NULL_SHOW)
-    Database.initAndSyncModel(databaseName, NULL_STANDUP)
+    await Database.initAndSyncModel(databaseName, NULL_ANIMATION)
+    await Database.initAndSyncModel(databaseName, NULL_ANIME)
+    await Database.initAndSyncModel(databaseName, NULL_MISC_VIDEO)
+    await Database.initAndSyncModel(databaseName, NULL_MOVIE)
+    await Database.initAndSyncModel(databaseName, NULL_SHOW)
+    await Database.initAndSyncModel(databaseName, NULL_STANDUP)
   }
 
 
@@ -377,12 +381,19 @@ export class Database {
 
 
 
-  private static initAndSyncModel(databaseName: DatabaseNames, media: Media): void {
+  private static async initAndSyncModel(databaseName: DatabaseNames, media: Media): Promise<void> {
     const DATABASE = Database.determineDatabase(databaseName)
     try {
+      await DATABASE.authenticate()
       const MODEL = media.getModel()
-      MODEL.init(media.getAttributes(), { sequelize: DATABASE, tableName: media.getTableName() })
-      MODEL.sync()
+      MODEL.init(
+        media.getAttributes(),
+        {
+          sequelize: DATABASE,
+          tableName: media.getTableName()
+        }
+      )
+      await MODEL.sync({ alter: true })
     } catch (error) {
       throw new Error(`Failed to init & sync model to table: ${media.getTableName()}`, { cause: error })
     }
