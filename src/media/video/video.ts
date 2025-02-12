@@ -32,26 +32,6 @@ export abstract class Video extends Media {
 
 
 
-  public prepStringForFileName(someString: string): string {
-    const NEW_STRING =
-      someString.toLowerCase()
-        .replace(/ /g, '-')
-        .replace(':', '')
-        .replace('\'', '')
-        .replace(';', '')
-        .replace('"', '')
-        .replace('?', '')
-        .replace('>', '')
-        .replace('<', '')
-        .replace('\\', '/')
-        .replace('|', '')
-        .replace('*', '')
-
-    return NEW_STRING
-  }
-
-
-
   public static getTableNameFromVideoType(videoType: VideoTypes): DatabaseTableNames {
     switch (videoType) {
       case VideoTypes.Animation:

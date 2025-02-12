@@ -2,7 +2,6 @@ import { SarutaLogger } from './saruta_logger.js'
 import { SarutaTime } from './saruta_time.js'
 import { DatabaseNames, DatabaseTableNames } from '../configuration/db/index.js'
 import { Sequelize, QueryTypes } from 'sequelize'
-import { promisify } from 'util'
 import { exec } from 'child_process'
 import { Media, MediaTypes } from '../media/media.js'
 import { MediaFactory } from '../media/media_factory.js'
@@ -33,18 +32,17 @@ export class Database {
 
 
 
-  public static async backupAll(): Promise<void> {
+  public static backupAll(): void {
     for (const [, DATABASE_NAME] of Object.values(Configs.databaseNames).entries()) {
-      await Database.backup(DATABASE_NAME)
+      Database.backup(DATABASE_NAME)
     }
   }
 
 
 
-  public static async backup(databaseName: DatabaseNames): Promise<void> {
-    const EXEC_ASYNC = promisify(exec)
+  public static backup(databaseName: DatabaseNames): void {
     try {
-      await EXEC_ASYNC(
+      exec(
         `mysqldump -u ${Configs.databaseInfo.username} ` +
         `-p${Configs.databaseInfo.password} ${databaseName} ` +
         `> "${Configs.backupDirectories.out}/${databaseName}___${SarutaTime.getCurrentDateTime(true)}".sql`

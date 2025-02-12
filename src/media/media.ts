@@ -26,6 +26,28 @@ export abstract class Media {
   public abstract getAttributes(): any
   public abstract getProductionFilePath(): string
   public abstract getRejectFilePath(): string
+
+
+
+  public prepStringForFileName(someString: string): string {
+    const NEW_STRING =
+      someString.toLowerCase()
+        .replaceAll(/ /g, '-')
+        .replaceAll(':', '')
+        .replaceAll('\'', '')
+        .replaceAll(';', '')
+        .replaceAll('"', '')
+        .replaceAll('?', '')
+        .replaceAll('>', '')
+        .replaceAll('<', '')
+        .replaceAll('\\', '/')
+        .replaceAll('|', '')
+        .replaceAll('*', '')
+        .replaceAll(',', '')
+        .replaceAll('.', '')
+
+    return NEW_STRING
+  }
 }
 
 
