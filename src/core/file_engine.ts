@@ -59,7 +59,7 @@ export class FileEngine {
     for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
       const MEDIA_IN_TABLE = validationResponse.tables[TABLE_NAME]
       if (MEDIA_IN_TABLE.length > 0) {
-        SarutaLogger.data('Attempting to move files from staging to', `${LANDING}/${TABLE_NAME}`)
+        SarutaLogger.data(`Attempting to move files from staging to ${LANDING}`, TABLE_NAME)
 
         let count = 0
         for (const [, MEDIA] of MEDIA_IN_TABLE.entries()) {
@@ -78,6 +78,15 @@ export class FileEngine {
       } else {
         SarutaLogger.data('No valid files -- Skipping', TABLE_NAME)
       }
+    }
+
+    try {
+      await FileEngine.cleanStagingDirectory()
+    } catch (error) {
+      throw new Error(
+        'Something went wrong while trying to clean up empty directories in staging.',
+        { cause: error }
+      )
     }
   }
 
@@ -167,7 +176,7 @@ export class FileEngine {
 
   private static moveMediaFile(media: Media, oldFilePath: string, newFilePath: string): void {
     try {
-      SarutaLogger.data(`Attempting to move to ${path.dirname(newFilePath)}`, media.title)
+      SarutaLogger.data('Attempting to move', media.title)
       FileEngine.moveFileTo(oldFilePath, newFilePath)
       media.filePath = newFilePath
       SarutaLogger.info('\tSuccess')
@@ -221,10 +230,9 @@ export class FileEngine {
       try {
         fsSync.renameSync(oldFilePath, newFilePath)
       } catch {
-        SarutaLogger.info('Cross-Disk move detected... Copying instead of renaming...')
+        SarutaLogger.info('\tCross-Disk move detected... Copying instead of renaming...')
         fsSync.copyFileSync(oldFilePath, newFilePath)
         fsSync.unlinkSync(oldFilePath)
-        FileEngine.cleanStagingDirectory()
       }
     } catch (error) {
       SarutaLogger.error(Error(`File operation failed: ${newFilePath}`, { cause: error }))
