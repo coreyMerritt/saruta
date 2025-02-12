@@ -2,6 +2,7 @@ import { SarutaLogger } from '../core/index.js'
 import { Media } from '../media/media.js'
 import path from 'path'
 import fs from 'fs/promises'
+import * as fsSync from 'fs'
 import { Configs } from '../configuration/configs.js'
 
 
@@ -53,13 +54,61 @@ export class FileEngine {
 
 
   public static async moveStagingFilesToProduction(validationResponse: ValidationResponse): Promise<void> {
-    await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Production)
+    const LANDING = LandingPoints.Production
+
+    for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
+      const MEDIA_IN_TABLE = validationResponse.tables[TABLE_NAME]
+      if (MEDIA_IN_TABLE.length > 0) {
+        SarutaLogger.data('Attempting to move files from staging to', `${LANDING}/${TABLE_NAME}`)
+
+        let count = 0
+        for (const [, MEDIA] of MEDIA_IN_TABLE.entries()) {
+          try {
+            await FileEngine.moveStagingFileToPath(LANDING, MEDIA)
+            count ++
+          } catch (error) {
+            throw new Error(`Failed to move: ${MEDIA.title}`, { cause: error })
+          }
+        }
+
+        SarutaLogger.data(
+          `${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${LANDING}`,
+          String(count)
+        )
+      } else {
+        SarutaLogger.data('No valid files -- Skipping', TABLE_NAME)
+      }
+    }
   }
 
 
 
   public static async moveStagingFilesToRejected(validationResponse: ValidationResponse): Promise<void> {
-    await FileEngine.moveStagingFilesToPath(validationResponse, LandingPoints.Rejection)
+    const LANDING = LandingPoints.Rejection
+
+    for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
+      const MEDIA_IN_TABLE = validationResponse.tables[TABLE_NAME]
+      if (MEDIA_IN_TABLE.length > 0) {
+        SarutaLogger.data('Attempting to move files to', TABLE_NAME)
+
+        let count = 0
+        for (const [, MEDIA] of MEDIA_IN_TABLE.entries()) {
+          try {
+            await FileEngine.moveStagingFileToPath(LANDING, MEDIA)
+            count ++
+          } catch (error) {
+            throw new Error(`Failed to move: ${MEDIA.title}`, { cause: error })
+          }
+        }
+
+        SarutaLogger.data(
+          `${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${LANDING}`,
+          String(count)
+        )
+      } else {
+        SarutaLogger.data('Skipping', TABLE_NAME)
+      }
+    }
   }
 
 
@@ -98,60 +147,83 @@ export class FileEngine {
 
 
 
-  private static async moveStagingFilesToPath(
-    validationResponse: ValidationResponse,
-    landing: LandingPoints
+  private static async moveStagingFileToPath(
+    landing: LandingPoints,
+    media: Media
   ): Promise<void> {
 
-    for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
-      SarutaLogger.data('Attempting to move files to', TABLE_NAME)
-      let count = 0
-      for (const [, MEDIA] of validationResponse.tables[TABLE_NAME].entries()) {
-        let newFilePath: string
-        if (landing === LandingPoints.Production) {
-          newFilePath = MEDIA.getProductionFilePath()
-        } else if (landing === LandingPoints.Rejection) {
-          newFilePath = MEDIA.getRejectFilePath()
-        } else {
-          throw new Error ('Landing point for staging files is not yet configured.')
-        }
+    const OLD_MEDIA_FILE_PATH = media.filePath
+    const NEW_MEDIA_FILE_PATH = FileEngine.getNewMediaFilePath(media, landing)
+
+    FileEngine.moveMediaFile(media, OLD_MEDIA_FILE_PATH, NEW_MEDIA_FILE_PATH)
+
+    const MEDIA_HAS_SRT = FileEngine.mediaHasSrt(OLD_MEDIA_FILE_PATH)
+    if (MEDIA_HAS_SRT) {
+      FileEngine.moveMatchingSrtFile(media, OLD_MEDIA_FILE_PATH, NEW_MEDIA_FILE_PATH)
+    }
+  }
 
 
-        try {
-          await FileEngine.moveFileTo(MEDIA.filePath, newFilePath)
-          MEDIA.filePath = newFilePath
-          count ++
-          SarutaLogger.data(`Moved to ${landing}`, MEDIA.title)
-        } catch (error) {
-          SarutaLogger.error(
-            Error(
-              `Failed to move file: ${MEDIA.filePath}`,
-              { cause: error }
-            )
-          )
-        }
-      }
 
-      SarutaLogger.data(
-        `${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${landing}`,
-        String(count)
+  private static moveMediaFile(media: Media, oldFilePath: string, newFilePath: string): void {
+    try {
+      SarutaLogger.data(`Attempting to move to ${path.dirname(newFilePath)}`, media.title)
+      FileEngine.moveFileTo(oldFilePath, newFilePath)
+      media.filePath = newFilePath
+      SarutaLogger.info('\tSuccess')
+    } catch (error) {
+      SarutaLogger.error(
+        Error(
+          `Failed to move file: ${oldFilePath}`,
+          { cause: error }
+        )
       )
     }
   }
 
 
 
-  private static async moveFileTo(oldFilePath: string, newFilePath: string): Promise<void> {
+  private static moveMatchingSrtFile(media: Media, oldMediaFilePath: string, newMediaFilePath: string): void {
     try {
-      await fs.mkdir(path.dirname(newFilePath), { recursive: true })
-      await fs.access(oldFilePath)
+      SarutaLogger.data('SRT Move', media.title)
+      const OLD_SRT_PATH = FileEngine.getSrtPath(oldMediaFilePath)
+      const NEW_SRT_PATH = FileEngine.getSrtPath(newMediaFilePath)
+
+      FileEngine.moveFileTo(OLD_SRT_PATH, NEW_SRT_PATH)
+      SarutaLogger.info('\tSuccess')
+    } catch (error) {
+      SarutaLogger.important(`Attempted to move srt, but something went wrong.\n${error}`)
+    }
+  }
+
+
+
+  private static getNewMediaFilePath(media: Media, landing: LandingPoints): string {
+    let newMediaFilePath: string
+    if (landing === LandingPoints.Production) {
+      newMediaFilePath = media.getProductionFilePath()
+    } else if (landing === LandingPoints.Rejection) {
+      newMediaFilePath = media.getRejectFilePath()
+    } else {
+      throw new Error ('Landing point for staging files is not yet configured.')
+    }
+
+    return newMediaFilePath
+  }
+
+
+
+  private static moveFileTo(oldFilePath: string, newFilePath: string): void {
+    try {
+      fsSync.mkdirSync(path.dirname(newFilePath), { recursive: true })
+      fsSync.accessSync(oldFilePath)
 
       try {
-        await fs.rename(oldFilePath, newFilePath)
+        fsSync.renameSync(oldFilePath, newFilePath)
       } catch {
         SarutaLogger.info('Cross-Disk move detected... Copying instead of renaming...')
-        await fs.copyFile(oldFilePath, newFilePath)
-        await fs.unlink(oldFilePath)
+        fsSync.copyFileSync(oldFilePath, newFilePath)
+        fsSync.unlinkSync(oldFilePath)
         FileEngine.cleanStagingDirectory()
       }
     } catch (error) {
@@ -160,6 +232,32 @@ export class FileEngine {
     }
   }
 
+
+
+
+  private static mediaHasSrt(media_file_path: string): boolean {
+    const SRT_PATH = FileEngine.getSrtPath(media_file_path)
+
+    try {
+      fsSync.accessSync(SRT_PATH)
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
+
+
+  private static getSrtPath(media_file_path: string): string {
+    const EXT = path.extname(media_file_path)
+    const DIR = path.dirname(media_file_path)
+    const FILE_NAME = path.basename(media_file_path, EXT)
+
+    const OLD_SRT_PATH = path.join(DIR, `${FILE_NAME}.srt`)
+
+    return OLD_SRT_PATH
+  }
 
 
 
