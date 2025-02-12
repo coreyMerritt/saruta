@@ -4,10 +4,10 @@ import { DatabaseNames, DatabaseTableNames } from '../configuration/db/index.js'
 import { Sequelize, QueryTypes } from 'sequelize'
 import { promisify } from 'util'
 import { exec } from 'child_process'
-import { Media } from '../media/media.js'
+import { Media, MediaTypes } from '../media/media.js'
 import { MediaFactory } from '../media/media_factory.js'
 import { Validators } from './validators.js'
-import { ValidationResponse } from './file_engine.js'
+import { FileEngine, ValidationResponse } from './file_engine.js'
 import { Configs } from '../configuration/configs.js'
 import { VideoFactory } from '../media/video/video_factory.js'
 import { VideoTypes } from '../media/video/video.js'
@@ -35,7 +35,7 @@ export class Database {
 
   public static async backupAll(): Promise<void> {
     for (const [, DATABASE_NAME] of Object.values(Configs.databaseNames).entries()) {
-      Database.backup(DATABASE_NAME)
+      await Database.backup(DATABASE_NAME)
     }
   }
 
@@ -130,6 +130,87 @@ export class Database {
       return ENTRIES
     } else {
       throw new Error('Pulled invalid media from database.')
+    }
+  }
+
+
+
+  public static async lintAll(): Promise<void> {
+    for (const [, DATABASE_NAME] of Object.values(Configs.databaseNames).entries()) {
+      for (const [, MEDIA_TYPE] of Object.values(MediaTypes).entries()) {
+        switch (MEDIA_TYPE) {
+          case MediaTypes.Video:
+            for (const [, VIDEO_TYPE] of Object.values(VideoTypes).entries()) {
+              switch (VIDEO_TYPE) {
+                case VideoTypes.Animation:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.Animation
+                  )
+                  break
+                case VideoTypes.Anime:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.Anime
+                  )
+                  break
+                case VideoTypes.Misc:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.MiscVideo
+                  )
+                  break
+                case VideoTypes.Movie:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.Movies
+                  )
+                  break
+                case VideoTypes.Show:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.Shows
+                  )
+                  break
+                case VideoTypes.Standup:
+                  await Database.removeEntriesWithoutFiles(
+                    DATABASE_NAME,
+                    DatabaseTableNames.Standup
+                  )
+                  break
+                default:
+                  throw new Error('Trying to lint an undefined videoType.')
+              }
+            }
+            break
+          default:
+            throw new Error('Trying to lint an undefined mediaType.')
+        }
+      }
+    }
+  }
+
+
+
+  private static async removeEntriesWithoutFiles(
+    databaseName: DatabaseNames,
+    tableName: DatabaseTableNames
+  ): Promise<void> {
+
+    try {
+      SarutaLogger.data('Linting', `${databaseName} -> ${tableName}...`)
+      const MEDIA_TO_CHECK = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
+
+      for (const [, MEDIA] of MEDIA_TO_CHECK.entries()) {
+        if (! await FileEngine.fileExists(MEDIA.filePath)) {
+          const TRUE_MEDIA = VideoFactory.createVideoFromObject(MEDIA)
+          await Database.removeMediaFromTable(databaseName, TRUE_MEDIA)
+        }
+      }
+
+      SarutaLogger.success('\tSuccess')
+    } catch (error) {
+      throw new Error(`Unable to lint database: ${databaseName}`, { cause: error })
     }
   }
 

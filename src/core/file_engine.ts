@@ -103,9 +103,8 @@ export class FileEngine {
     landing: LandingPoints
   ): Promise<void> {
 
-    SarutaLogger.info(`Attempting to move files from staging to ${landing}...`)
-
     for (const [, TABLE_NAME] of Object.keys(validationResponse.tables).entries()) {
+      SarutaLogger.data('Attempting to move files to', TABLE_NAME)
       let count = 0
       for (const [, MEDIA] of validationResponse.tables[TABLE_NAME].entries()) {
         let newFilePath: string
@@ -133,8 +132,9 @@ export class FileEngine {
         }
       }
 
-      SarutaLogger.success(
-        `${count} ${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${landing}.`
+      SarutaLogger.data(
+        `${TABLE_NAME} file${count > 1 ? 's' : ''} moved to ${landing}`,
+        String(count)
       )
     }
   }

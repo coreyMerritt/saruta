@@ -11,6 +11,7 @@ import { ErrorMiddleware, RequestMiddleware } from '../middleware/index.js'
 import { Configs } from '../configuration/configs.js'
 
 
+
 export class Start {
 
   private static port = process.env.LIKI_PORT
@@ -73,6 +74,7 @@ export class Start {
   private static async startPassiveJobs(): Promise<void> {
     cron.schedule('0 0 * * *', () => {
       Database.backupAll()
+      Database.lintAll()
     },
     {
       timezone: 'America/Detroit'
