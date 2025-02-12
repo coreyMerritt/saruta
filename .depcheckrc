@@ -1,0 +1,7 @@
+{
+  ignores: [
+    "mysqldump",
+    "@types/eslint",
+    "depcheck"
+  ]
+}
