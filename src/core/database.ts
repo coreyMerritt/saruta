@@ -84,7 +84,7 @@ export class Database {
 
       return media.length
     } catch (error) {
-      throw new Error(`Failed to add indexes to table: ${media[0].getTableName()}`, { cause: error })
+      throw new Error(`Failed to add entries to table: ${media[0].getTableName()}`, { cause: error })
     }
   }
 
@@ -198,7 +198,7 @@ export class Database {
   ): Promise<void> {
 
     try {
-      SarutaLogger.data('Linting', `${databaseName} -> ${tableName}...`)
+      SarutaLogger.data('Linting Database entries:', `${databaseName} -> ${tableName}...`)
       const MEDIA_TO_CHECK = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
 
       for (const [, MEDIA] of MEDIA_TO_CHECK.entries()) {
@@ -522,7 +522,7 @@ export class Database {
             )
             count ++
           } else {
-            throw new Error(`filePath was not updated for ${databaseNameTwo}.\nDatabase indexes were not changed.`)
+            throw new Error(`filePath was not updated for ${databaseNameTwo}.\nDatabase entries were not changed.`)
           }
         }
       }
