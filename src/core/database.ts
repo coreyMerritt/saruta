@@ -196,7 +196,7 @@ export class Database {
   ): Promise<void> {
 
     try {
-      SarutaLogger.data('Linting Database entries:', `${databaseName} -> ${tableName}...`)
+      SarutaLogger.data('Linting Database entries', `${databaseName} -> ${tableName}...`)
       const MEDIA_TO_CHECK = await Database.getDatabaseEntriesFromTable(databaseName, tableName)
 
       for (const [, MEDIA] of MEDIA_TO_CHECK.entries()) {
