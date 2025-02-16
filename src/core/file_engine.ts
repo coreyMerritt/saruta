@@ -143,7 +143,7 @@ export class FileEngine {
             )
           if (IS_PROPER_FILE_EXT) {
             FILE_MATCHING_EXTENSION.push(FILE_PATH)
-            SarutaLogger.data('Added file to be indexed.', FILE_PATH)
+            SarutaLogger.data('Added file to be indexed', FILE_PATH)
           }
         }
       }
@@ -239,7 +239,6 @@ export class FileEngine {
       throw error
     }
   }
-
 
 
 
