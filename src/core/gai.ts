@@ -4,6 +4,7 @@ import { OpenAI } from 'openai'
 import { Prompt } from './prompt.js'
 import { Media } from '../media/media.js'
 import { MediaFactory } from '../media/media_factory.js'
+import { Configs } from '../configuration/configs.js'
 
 
 export class GAI {
@@ -13,7 +14,7 @@ export class GAI {
 
 
   constructor() {
-    this.model = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    this.model = new OpenAI({ apiKey: Configs.openAiApiKey })
   }
 
 
@@ -25,7 +26,6 @@ export class GAI {
 
     for (const [INDEX, FILE_PATH] of filePaths.entries()) {
       workingArray.push(FILE_PATH)
-
       if (((INDEX + 1) % 30) === 0) {
         SarutaLogger.data(
           'Attempting to parse files',

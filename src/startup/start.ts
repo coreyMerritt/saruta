@@ -14,8 +14,8 @@ import { Configs } from '../configuration/configs.js'
 
 export class Start {
 
-  private static port = process.env.LIKI_PORT
-  private static protocol = process.env.LIKI_PROTOCOL
+  private static port = process.env.SARUTA_PORT
+  private static protocol = process.env.SARUTA_PROTOCOL
   public static url = `${this.protocol}://localhost:${this.port}`
 
   public static async execute(test?: boolean): Promise<void> {

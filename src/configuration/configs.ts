@@ -65,6 +65,7 @@ export class Configs {
   public static coreDirectories: ActiveCoreDirectories
   public static logPaths: ActiveLogPaths
   public static videoTypeDirectories: ActiveVideoTypeDirectories
+  public static openAiApiKey: string
 
 
 
@@ -93,20 +94,25 @@ export class Configs {
     this.setCoreDirectories()
     this.setLogPaths()
     this.setVideoTypeDirectories()
+    this.setApiKeys()
   }
 
 
 
   private static setDatabaseInfo(): void {
-    if (process.env.LIKI_USERNAME && process.env.LIKI_PASSWORD) {
+    if (process.env.SARUTA_USERNAME && process.env.SARUTA_PASSWORD) {
       this.databaseInfo = {
-        username: process.env.LIKI_USERNAME,
-        password: process.env.LIKI_PASSWORD,
+        username: process.env.SARUTA_USERNAME,
+        password: process.env.SARUTA_PASSWORD,
         host: 'localhost',
         port: 3306
       }
     } else {
-      throw new Error('Credentials were not set in the environment variables.')
+      throw new Error(
+        'Please set credentials as env vars:\n' +
+        'SARUTA_USERNAME\n' +
+        'SARUTA_PASSWORD\n'
+      )
     }
   }
 
@@ -168,6 +174,14 @@ export class Configs {
         standup: `${this.coreDirectories.rejectionVideos}/${VideoTypeDirectories.Standup}`,
         misc: `${this.coreDirectories.rejectionVideos}/${VideoTypeDirectories.MiscVideo}`
       }
+    }
+  }
+
+  private static setApiKeys(): void {
+    if (process.env.OPENAI_API_KEY) {
+      this.openAiApiKey = process.env.OPENAI_API_KEY
+    } else {
+      throw new Error('OPENAI_API_KEY env var not set.')
     }
   }
 }
