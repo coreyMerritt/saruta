@@ -14,4 +14,6 @@ export class LintController {
       next(error)
     }
   }
+
+  // TODO: lintFiles
 }

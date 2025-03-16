@@ -1,0 +1,4 @@
+2025/03/16 - Just spent an hour debugging an issue where a validation response results in error:
+    - "Error: Error while moving saruta_staging database entry into saruta_production. State unclear."
+        - This turned out to be an issue where saruta_client wasn't handling automatically quoting a title with a space and number, resulting in a type issue (bad string) I think? Very strange.
+  
