@@ -178,10 +178,10 @@ export class Configs {
   }
 
   private static setApiKeys(): void {
-    if (process.env.OPENAI_API_KEY) {
-      this.openAiApiKey = process.env.OPENAI_API_KEY
+    if (process.env.SARUTA_OPENAI_API_KEY) {
+      this.openAiApiKey = process.env.SARUTA_OPENAI_API_KEY
     } else {
-      throw new Error('OPENAI_API_KEY env var not set.')
+      throw new Error('SARUTA_OPENAI_API_KEY env var not set.')
     }
   }
 }

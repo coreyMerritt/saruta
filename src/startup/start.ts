@@ -9,16 +9,19 @@ import validationRoutes from '../api/routes/validation.js'
 import lintRoutes from '../api/routes/lint.js'
 import { ErrorMiddleware, RequestMiddleware } from '../middleware/index.js'
 import { Configs } from '../configuration/configs.js'
+import { exit } from 'process'
 
 
 
 export class Start {
-
   private static port = process.env.SARUTA_PORT
   private static protocol = process.env.SARUTA_PROTOCOL
   public static url = `${this.protocol}://localhost:${this.port}`
 
   public static async execute(test?: boolean): Promise<void> {
+    if (! this.port) throw new Error('SAURTA_PORT is not set')
+    if (! this.protocol) throw new Error('SAURTA_PROTOCOL is not set')
+
     if (test) {
       Configs.set(true)
     } else {
